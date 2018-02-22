@@ -1,5 +1,26 @@
 <?php
-
+/***********************************************************
+ * indexer is a software for supporting the review process of unstructured data
+ *
+ * Copyright © 2012-2018 Juergen Enge (juergen@info-age.net)
+ * FHNW Academy of Art and Design, Basel
+ * Deutsches Literaturarchiv Marbach
+ * Hochschule für Angewandte Wissenschaft und Kunst Hildesheim/Holzminden/Göttingen
+ *
+ * indexer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * indexer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************/
+ 
 function updateDocument( $db, $sessionid, $fileid, $newdata, $config )
 {
 	static $paths = array();
@@ -26,7 +47,7 @@ function updateDocument( $db, $sessionid, $fileid, $newdata, $config )
 function updateDocumentSolarium( $db, $sessionid, $fileid, $newdata, $config )
 {
 	global $config, $solarium_config;
-	
+
 	static $paths = array();
 	$data = array();
 	$data['id'] = "{$sessionid}.{$fileid}";
@@ -38,7 +59,7 @@ function updateDocumentSolarium( $db, $sessionid, $fileid, $newdata, $config )
 		$path = $paths[$sessionid];
 	}
 	else {
-		$sql = "SELECT solrpath FROM session WHERE sessionid={$sessionid}";	
+		$sql = "SELECT solrpath FROM session WHERE sessionid={$sessionid}";
 		$path = trim( $db->getOne( $sql ));
 		$paths[$sessionid] = $path;
 		//error_log( "SELECT solrpath FROM session WHERE sessionid={$sessionid} -> {$path}" );
@@ -56,13 +77,13 @@ function updateDocumentSolarium( $db, $sessionid, $fileid, $newdata, $config )
 	}
 	$update->addDocument( $doc, null, 20000 );
 	//$update->addCommit( true );
-	
+
 	$rb = $update->getRequestBuilder();
 	error_log( $rb->getRawData( $update ));
-	
+
 	$result = $client->update($update);
 
-	
+
 	//echo '<b>Update query executed</b><br/>';
 	//echo 'Query status: ' . $result->getStatus(). '<br/>';
 	//	echo 'Query time: ' . $result->getQueryTime();
@@ -79,20 +100,20 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 
 //		   $counter++;
 //		   if( $echo ) echo "{$counter}/{$num}\n";
-   
+
    $suggest = '';
    $thumb = null;
    $tikacontent = false;
 
    $id = "{$sessionid}.{$fileid}";
-   
+
    $doc = new SolrInputDocument();
-   
+
    $doc->addField('id', $id);
 
    $doc->addField('status.locked', $row['lock']);
    $doc->addField('status.status', $row['status']);
-   
+
    $doc->addField('session.id', $sessionid);
    $doc->addField('session.name', $row['sessionname']);
    $doc->addField('session.basepath', $row['basepath']);
@@ -126,11 +147,11 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('status.status', $row['status']);
    $doc->addField('status.locked', $row['locked']);
 
-   
+
    $doc->addField('libmagic.mimetype', $row['mimetype']);
    $doc->addField('libmagic.mimeencoding', $row['mimeencoding']);
    $doc->addField('libmagic.description', $row['description']);
-   
+
    $sql = "SELECT * FROM info_gvfs_info WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -155,7 +176,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 				$fid = gzopen( $fname, 'r' );
 				$content = gzread( $fid, $config['tika_max_size'] );
 				gzclose( $fid );
-//						ob_start(); 
+//						ob_start();
 //						readgzfile( $fname );
 //						$content = ob_get_clean();
 				$content = iconv("UTF-8", "UTF-8//IGNORE", $content);
@@ -165,12 +186,12 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 			}
 		}
    }
-   
+
    $sql = "SELECT * FROM info_detex WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
-   
+
 		if( $row2['content'] ) {
 			$suggest = iconv("UTF-8", "UTF-8//IGNORE", $row2['content']);
 			$doc->addField('detex.content', $suggest);
@@ -178,7 +199,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		//$suggest = $row2['content'];
    }
 
-   if( !$suggest ) 
+   if( !$suggest )
    {
 	   $sql = "SELECT * FROM info_antiword WHERE sessionid={$sessionid} AND fileid={$fileid} AND hascontent=1";
 	   $row2 = $db->getRow( $sql );
@@ -187,7 +208,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 			$fname = "{$row['localpath']}/{$row['localcopy']}{$config['antiword_file_ext']}.gz";
 			if( file_exists( $fname ))
 			{
-				ob_start(); 
+				ob_start();
 				readgzfile( $fname );
 				$content = ob_get_clean();
 				$content = iconv("UTF-8", "UTF-8//IGNORE", $content);
@@ -202,15 +223,15 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
-		if( $row2['content'] ) 
-		{ 
+		if( $row2['content'] )
+		{
 			$content = iconv("UTF-8", "UTF-8//IGNORE", $row2['content']);
 			$doc->addField('xscc.content', $content );
 			if( !$suggest ) $suggest = $content;
 		}
    }
-   
-   
+
+
    $sql = "SELECT * FROM info_imagick WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -249,17 +270,17 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    {
 		$doc->addField('nsrl.found', false);
    }
-	
-   
+
+
    if( $thumb ) $doc->addField('thumb', $thumb );
-   if( strlen( trim( $suggest ))) 
+   if( strlen( trim( $suggest )))
    {
 	if( $echo ) echo "suggest...";
 	$suggest = iconv("UTF-8", "UTF-8//IGNORE", trim( $suggest));
 	$doc->addField('suggest', $suggest );
 	$doc->addField('shorttext', iconv("UTF-8", "UTF-8//IGNORE", substr( $suggest, 0, 1024 )));
 	}
-   
+
    try {
 	if( $echo ) echo "add...";
 	$updateResponse = $client->addDocument($doc, true, 10000);
@@ -275,7 +296,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    if( $resp->responseHeader->status != 0 ) print_r($resp);
 
    if( $echo ) echo "\n";
-	
+
    //print_r( $row );
    //print_r( $doc->toArray());
 //   if( $counter > 100 ) break;

@@ -1,5 +1,25 @@
 <?php
-
+/***********************************************************
+ * indexer is a software for supporting the review process of unstructured data
+ *
+ * Copyright © 2012-2018 Juergen Enge (juergen@info-age.net)
+ * FHNW Academy of Art and Design, Basel
+ * Deutsches Literaturarchiv Marbach
+ * Hochschule für Angewandte Wissenschaft und Kunst Hildesheim/Holzminden/Göttingen
+ *
+ * indexer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * indexer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************/
 /*
 TRUNCATE file;
 TRUNCATE info_avconv;
@@ -40,7 +60,7 @@ else
 
 $startpage = 0;
 $update = false;
-if( $argc > 3 ) 
+if( $argc > 3 )
 {
 	$update = trim( strtolower( $argv[3] )) == 'update';
 	if( intval( $argv[3] )) $startpage = intval( $argv[3] );
@@ -62,7 +82,7 @@ foreach( $pluginClass::joins() as $short=>$dbname )
 	$sql .= "
 	LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
 }
-$sql .= " 
+$sql .= "
 WHERE f.sessionid = s.sessionid AND {$sessSQL} AND ".$pluginClass::where();
 
 	$num = intval( $db->GetOne( $sql ));
@@ -72,7 +92,7 @@ for( $page = $startpage; $page < $pages; $page++ )
 {
 	$startrec = $page*$pagesize;
 	$sql = "
-	SELECT f.*, s.basepath, s.localpath 
+	SELECT f.*, s.basepath, s.localpath
 	FROM `session` s, `file` f";
 	foreach( $pluginClass::joins() as $short=>$dbname )
 	{
@@ -84,7 +104,7 @@ for( $page = $startpage; $page < $pages; $page++ )
 	LIMIT {$startrec}, {$pagesize}";
 	echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
-	  
+
 	foreach( $rs as $row )
 	{
 		$sessionid = $row['sessionid'];
@@ -104,13 +124,13 @@ for( $page = $startpage; $page < $pages; $page++ )
 		echo "{$p}/{$num} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} =========\n";
 		$p++;
 
-	   
+
 		$plugin->init( $db, $sessionid, $fileid, $basepath, $fullpath, $localfile );
-	   
-	   
-	   if( !$update  &&  $plugin->check()) { 
-			$skip++; 
-			continue; 
+
+
+	   if( !$update  &&  $plugin->check()) {
+			$skip++;
+			continue;
 		}
 
 	   try {
@@ -126,6 +146,6 @@ for( $page = $startpage; $page < $pages; $page++ )
 	   $db->Execute( $sql );
 	}
 	$rs->Close();
-}	
+}
 gc_disable(); // Disable Garbage Collector
 ?>

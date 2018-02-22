@@ -1,5 +1,26 @@
 <?php
-
+/***********************************************************
+ * indexer is a software for supporting the review process of unstructured data
+ *
+ * Copyright © 2012-2018 Juergen Enge (juergen@info-age.net)
+ * FHNW Academy of Art and Design, Basel
+ * Deutsches Literaturarchiv Marbach
+ * Hochschule für Angewandte Wissenschaft und Kunst Hildesheim/Holzminden/Göttingen
+ *
+ * indexer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * indexer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************/
+ 
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 include( 'solr.inc.php' );
@@ -34,36 +55,36 @@ foreach( $srs as $srow )
 {
 	$config['solr']['path'] = $srow['solrpath'];
 	$client = new SolrClient($config['solr']);
-	
+
 	$p = 1;
 	$start = time();
 
 	$sql = "
 	SELECT count(*)
-	FROM `session` s, `file` f 
+	FROM `session` s, `file` f
 	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
-	WHERE f.sessionid = s.sessionid 
+	WHERE f.sessionid = s.sessionid
 	  AND s.sessionid = {$srow['sessionid']}
-	  AND f.mtime > ".$db->qstr( $srow['solrtime'] );	
+	  AND f.mtime > ".$db->qstr( $srow['solrtime'] );
 	echo "{$sql}\n";
-	
+
 	$num = intval( $db->GetOne( $sql ));
 	$pages = ceil( $num/$pagesize );
-	
-	
+
+
 
 	for( $page = 0; $page < $pages; $page++ )
 	{
-		$startrec = $page*$pagesize;	
-	
+		$startrec = $page*$pagesize;
+
 		$sql = "
 		SELECT f.*, ilm.*, s.basepath, s.name AS sessionname, s.localpath, s.group
-		FROM `session` s, `file` f 
+		FROM `session` s, `file` f
 		LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
-		WHERE f.sessionid = s.sessionid 
+		WHERE f.sessionid = s.sessionid
 		AND s.sessionid = {$srow['sessionid']}
 		AND f.mtime > ".$db->qstr( $srow['solrtime'] )."
-		LIMIT {$startrec}, {$pagesize}";	
+		LIMIT {$startrec}, {$pagesize}";
 		$rs = $db->Execute( $sql );
 		echo "{$sql}\n";
 
@@ -72,7 +93,7 @@ foreach( $srs as $srow )
 		   $sessionid = intval( $row['sessionid'] );
 		   $fileid = intval( $row['fileid'] );
 		   if( !$fileid || !$sessionid ) continue;
-		   
+
 		   if( $p % 1000 == 0 ) gc_collect_cycles();
 			$now = time();
 			$percent = ($p)*100/($num);

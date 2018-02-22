@@ -5,7 +5,7 @@
 # "AS IS" with no warranty whatsoever and are FREE for as long as you
 # want to use them. You can edit and adapt them to your requirements
 # without seeking permission from me. I only ask that you retain the
-# credits where they are due. 
+# credits where they are due.
 #
 # Author: Vishal Goenka <vgoenka@hotmail.com>
 
@@ -22,7 +22,7 @@
 # Certain old versions of awk may not support this script. If the awk
 # on your system gives errors, consider using nawk or gawk.
 #
-# This AWK script extracts program source code, comments or copyright 
+# This AWK script extracts program source code, comments or copyright
 # statements. Copyright statements are defined as the comment lines that
 # preceed the first line of code.
 #
@@ -31,23 +31,23 @@
 #
 #    extract=code      -- print the code, filter comments out. This mode
 #                         is the default, unless overridden otherwise.
-#    extract=comment   -- print the comments, and filter out the code. 
+#    extract=comment   -- print the comments, and filter out the code.
 #    extract=copyright -- print the copyright statements only.
 #
 #    prune=copyright   -- in the default mode (extract=code), it prints
-#                         all code and comments following the copyright 
-#                         statements, which are filtered out. 
+#                         all code and comments following the copyright
+#                         statements, which are filtered out.
 #                         In the 'extract=comment' mode, it prints all
 #                         comments other than the copyright statements.
-# 
-#    blanklines=1      -- by default, blank lines are not printed, unless 
+#
+#    blanklines=1      -- by default, blank lines are not printed, unless
 #                         specified using this option.
-#    
+#
 #    language=<lang>   -- force a specific language as per the following
 #                         table, rather than infer the language from the
 #                         extension, which is the default behavior.
 #
-# This script supports the following programming languages, and infers the 
+# This script supports the following programming languages, and infers the
 # language from the file extension (unless overridded using language=<lang>)
 # as follows:
 #
