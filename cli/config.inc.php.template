@@ -1,0 +1,91 @@
+<?php
+/***********************************************************
+* indexer is a software for supporting the review process of unstructured data
+ *
+ * Copyright © 2012-2018 Juergen Enge (juergen@info-age.net)
+ * FHNW Academy of Art and Design, Basel
+ * Deutsches Literaturarchiv Marbach
+ * Hochschule für Angewandte Wissenschaft und Kunst Hildesheim/Holzminden/Göttingen
+ *
+ * indexer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * indexer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************/
+
+$config = array();
+$config['db'] = array(
+   'server' => 'localhost',
+   'user' => 'indexer',
+   'pwd' => 'SECRET',
+   'db' => 'indexer',
+   );
+
+$config['tempfolder'] = '/u01/tmp';
+
+$config['gzip'] = '/usr/bin/gzip';
+$config['sha256'] = '/usr/bin/sha256sum';
+$config['md5'] = '/usr/bin/md5sum';
+$config['gvfs-info'] = '/usr/bin/gvfs-info';
+$config['antiword'] = '/home/indexer/bin/antiword';
+$config['antiword_file_ext'] = '.antiword.txt';
+//$config['tika'] = '/home/indexer/bin/timeout.sh -t 10 /usr/bin/java -jar  /home/indexer/tika-app-1.4.jar';
+$config['identify'] = '/home/indexer/bin/timeout.sh -t 20 /usr/bin/identify';
+$config['convert'] = '/usr/bin/convert';
+$config['thumb'] = "{$config['tempfolder']}/thumb.jpg";
+$config['detex'] = null; // '/usr/bin/detex';
+$config['detex_file_ext'] = '.detex.txt';
+$config['avconv'] = '/usr/bin/ffmpeg';
+$config['sonogram'] =  null; // '/usr/local/bin/sonogram';
+$config['sox'] = null; // '/usr/bin/sox';
+$config['sourcecomment'] = '/home/indexer/bin/xscc.awk';
+
+$config['tika'] = '/home/indexer/bin/timeout.sh -t 10 /home/indexer/tika';
+$config['tika_max_size'] = 5*1024*1024;
+$config['tika_gz_max_size'] = 1024*1024;
+$config['tika_file_ext'] = '.tika.txt';
+
+$config['nsrl_dbfile'] = '/u01/indexer/hashes/nsrl/minimal/NSRLFile.db';
+$config['nsrl_dbtype'] = 'db4';
+
+$config['solr'] = array
+(
+    'hostname' => 'localhost',
+//    'login'    => null,
+//    'password' => null,
+    'port'     => 8983,
+	'path'	   => '/solr/main',
+	'timeout'  => 120,
+);
+
+$config['cite'] = array( 'asset'=>'Bestand A:Kittler',
+						 'institution'=>'DLA Marbach',
+);
+
+$solarium_config = array(
+    'endpoint' => array(
+        'localhost' => array(
+            'host' => $config['solr']['hostname'],
+            'port' => $config['solr']['port'],
+            'path' => $config['solr']['path'],
+			'timeout' => 15,
+        )
+    )
+);
+
+set_include_path(get_include_path() . PATH_SEPARATOR . getcwd());
+spl_autoload_extensions(".class.php");
+spl_autoload_register();
+
+include( 'solarium-master/library/Solarium/Autoloader.php' );
+include( 'Symfony/vendor/autoload.php' );
+Solarium\Autoloader::register();
+?>
