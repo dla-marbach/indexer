@@ -92,7 +92,7 @@ for( $page = $startpage; $page < $pages; $page++ )
 {
 	$startrec = $page*$pagesize;
 	$sql = "
-	SELECT f.*, s.basepath, s.localpath
+	SELECT f.*, s.basepath, s.localpath, s.datapath
 	FROM `session` s, `file` f";
 	foreach( $pluginClass::joins() as $short=>$dbname )
 	{
@@ -110,6 +110,7 @@ for( $page = $startpage; $page < $pages; $page++ )
 		$sessionid = $row['sessionid'];
 		$fileid = $row['fileid'];
 		$basepath = $row['basepath'];
+		$datapath = $row['datapath'];
 		$fullpath = $row['fullpath'];
 		if( strlen( $row['localcopy'] )) $localfile = $row['localpath'].'/'.$row['localcopy'];
 		else $localfile = null;
@@ -125,7 +126,7 @@ for( $page = $startpage; $page < $pages; $page++ )
 		$p++;
 
 
-		$plugin->init( $db, $sessionid, $fileid, $basepath, $fullpath, $localfile );
+		$plugin->init( $db, $sessionid, $fileid, $datapath, $fullpath, $localfile );
 
 
 	   if( !$update  &&  $plugin->check()) {

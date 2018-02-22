@@ -90,9 +90,10 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 {
    global $db, $config, $update, $session;
 
+   $canread = true;
    if( $update )
    {
-		$sql = "SELECT * FROM `file` WHERE parentid={$parentid} AND name=".$db->qstr( $name );
+		$sql = "SELECT * `file` WHERE FROM sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
 		$row = $db->getRow( $sql );
 		if( count( $row ))
 		{
@@ -103,15 +104,18 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 			{
 						echo "copy!\n";
 						$src = fopen( "{$basepath}/{$fullpath}", 'r' );
-						$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
-						$bytes = stream_copy_to_stream($src, $dest);
-						fclose( $src );
-						fclose( $dest );
-						if( !$bytes ) {
-							unlink( "{$localpath}/{$localcopy}" );
-							$localcopy = null;
-						}
-						else chmod( "{$localpath}/{$localcopy}", 0644 );
+            if( $src === false ) { $canread = false; }
+            else {
+  						$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
+  						$bytes = stream_copy_to_stream($src, $dest);
+  						fclose( $src );
+  						fclose( $dest );
+  						if( !$bytes ) {
+  							unlink( "{$localpath}/{$localcopy}" );
+  							$localcopy = null;
+  						}
+  						else chmod( "{$localpath}/{$localcopy}", 0644 );
+            }
 			}
 			return;
 		}
@@ -122,32 +126,44 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
  	$strStat = doStat( "{$basepath}/{$fullpath}", $stat );
 	echo $strStat;
 
-	$cmd = $config['sha256']." -b "._escapeshellarg( "{$basepath}/{$fullpath}" );
-	$sha256 = shell_exec( $cmd );
-	if( preg_match( "/^([0-9a-f]+) .*/", $sha256, $matches ))
-	{
-	   $sha256 = $matches[1];
-	}
-	else
-	{
-	}
-
-	$localcopy = null;
+  $localcopy = null;
 	if( $localpath )
 	{
 		$md5 = md5( "{$sessionid}:{$fullpath}" );
 		$localcopy = $md5{0}.'/'.$md5{1}.'/'.substr( $md5, 2 );
+
 		$src = fopen( "{$basepath}/{$fullpath}", 'r' );
-		$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
-		$bytes = stream_copy_to_stream($src, $dest);
-		fclose( $src );
-		fclose( $dest );
-		if( !$bytes ) {
-		    unlink( "{$localpath}/{$localcopy}" );
-			$localcopy = null;
-		}
-		else chmod( "{$localpath}/{$localcopy}", 0644 );
+    if( $src === false ) {
+      $canread = false;
+    }
+    else {
+  		$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
+  		$bytes = stream_copy_to_stream($src, $dest);
+  		fclose( $src );
+  		fclose( $dest );
+  		if( !$bytes ) {
+  		    unlink( "{$localpath}/{$localcopy}" );
+  			$localcopy = null;
+        $canread = false;
+  		}
+  		else chmod( "{$localpath}/{$localcopy}", 0644 );
+    }
 	}
+
+
+	$cmd = $config['sha256']." -b "._escapeshellarg( "{$basepath}/{$fullpath}" );
+  $sha256 = null;
+  if( $canread ) {
+  	$sha256 = shell_exec( $cmd );
+  	if( preg_match( "/^([0-9a-f]+) .*/", $sha256, $matches ))
+  	{
+  	   $sha256 = $matches[1];
+       if( strlen( $sha256 ) > 64 ) $sha256 = null;
+  	}
+  	else
+  	{
+  	}
+  }
 	$sql = "INSERT INTO `file` (
       `sessionid`
     , `parentid`
@@ -341,6 +357,10 @@ $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
 
+  $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$row['sessionid']}";
+  $num = intval($db->GetOne( $sql ));
+  if( $num ) continue;
+
   $session = $row;
 
 	$basepath = $row['basepath'];
@@ -348,6 +368,7 @@ foreach( $rs as $row )
   $datapath = $row['datapath'];
   $mountpoint = $row['mountpoint'];
   $fscharset = $row['fscharset'];
+  //print_r( $session );
   $mount = null;
   $umount = null;
   if( $row['mount'] ) {
@@ -358,7 +379,7 @@ foreach( $rs as $row )
     passthru( $mount );
   }
 
-	recurse( $row['sessionid'], $basepath, $localpath, '', 0, 0 );
+	recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
 
   if( $mount ) {
     echo $umount."\n";
