@@ -69,6 +69,19 @@ if( $argc > 3 )
 $p = 1;
 $start = time();
 $skip = 0;
+
+if( $pluginClass == 'indexer\\tika' ) {
+	$sql = "SELECT sessionid FROM session s WHERE {$sessSQL}";
+	$rs = $db->Execute( $sql );
+	foreach( $rs as $row ) {
+		$sessionid = $row['sessionid'];
+		$cmd = $config['tika']." ".escapeshellarg( "jdbc:mysql://{$config['db']['server']}/{$config['db']['db']}?user={$config['db']['user']}&password={$config['db']['pwd']}&useSSL=false" )." {$sessionid}";
+		echo "$cmd\n";
+		passthru( $cmd );
+	}
+	return;
+}
+
 $plugin = new $pluginClass( );
 
 

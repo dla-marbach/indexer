@@ -27,9 +27,17 @@ include( 'db.inc.php' );
 
 
 if( $argc < 2 ) die( "{$argv[0]} <sessionid|groupname>\n" );
-$update = false;
+$update = true;
 
 $counter = 0;
+
+function is_mounted( $dir ) {
+  global $config;
+
+  $cmd = $config['mountpoint']." -q ".escapeshellarg( $dir );
+  exec( $cmd, $output, $return_var );
+  return ($return_var == 0);
+}
 
 function _escapeshellarg( $arg ) {
   return "'{$arg}'";
@@ -93,11 +101,12 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
    $canread = true;
    if( $update )
    {
-		$sql = "SELECT * `file` WHERE FROM sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
+		$sql = "SELECT * FROM `file` WHERE sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
 		$row = $db->getRow( $sql );
 		if( count( $row ))
 		{
 			echo "found!\n";
+      return;
 			$localcopy = $row['localcopy'];
 			$localfile = "{$localpath}/{$row['localcopy']}";
 			if( $localpath && (!is_file( $localfile ) || filesize( $localfile ) == 0 ))
@@ -211,18 +220,18 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 
 function storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
 {
-   global $db, $update;
+   global $db, $update, $session;
 
    echo "storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )\n";
 
    if( $update )
    {
-		$sql = "SELECT * FROM `file` WHERE parentid={$parentid} AND name=".$db->qstr( $name );
+		$sql = "SELECT * FROM `file` WHERE sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
 		echo "{$sql}\n";
 		$row = $db->getRow( $sql );
 		if( count( $row ))
 		{
-		   $fileid = $row['fileid'];
+		  $fileid = $row['fileid'];
 			recurse( $sessionid, $basepath, $localpath, $fullpath, $fileid, $level+1 );
 			return;
 		}
@@ -236,7 +245,7 @@ function storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $
 
 	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
     VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).",".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'dir', {$level}, {$stat['size']}, NULL, '".date( "Y-m-d H:i:s", $stat['ctime'] )."', '".date( "Y-m-d H:i:s", $stat['mtime'] )."', '".date( "Y-m-d H:i:s", $stat['atime'] )."', ".$db->qstr( $strStat ).", '' )";
-	echo "{$sql}\n";
+	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
 	$fileid = $db->Insert_ID();
 	//storeFileinfo( $sessionid, $basepath, $fullpath, $name, $fileid, $level );
@@ -249,7 +258,7 @@ function storeOther( $sessionid, $basepath, $localpath, $path, $fullpath, $name,
 
    if( $update )
    {
-		$sql = "SELECT * FROM `file` WHERE parentid={$parentid} AND name=".$db->qstr( $name );
+		$sql = "SELECT * FROM `file` WHERE sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
 		$row = $db->getRow( $sql );
 		if( count( $row ))
 		{
@@ -260,18 +269,18 @@ function storeOther( $sessionid, $basepath, $localpath, $path, $fullpath, $name,
 
 	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` )
   VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).",".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'other', {$level} )";
-	echo "{$sql}\n";
+	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
 }
 
 
 function storeLink( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
 {
-   global $db, $update;
+   global $db, $update, $session;
 
    if( $update )
    {
-		$sql = "SELECT * FROM `file` WHERE parentid={$parentid} AND name=".$db->qstr( $name );
+		$sql = "SELECT * FROM `file` WHERE sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
 		echo "{$sql}\n";
 		$row = $db->getRow( $sql );
 		if( count( $row ))
@@ -291,7 +300,7 @@ function storeLink( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 
 	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path` , `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
   VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'link', {$level}, {$stat['size']}, NULL, '".date( "Y-m-d H:i:s", $stat['ctime'] )."', '".date( "Y-m-d H:i:s", $stat['mtime'] )."', '".date( "Y-m-d H:i:s", $stat['atime'] )."', ".$db->qstr( $strStat ).", ".$db->qstr( $target )." )";
-	echo "{$sql}\n";
+	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
 	$fileid = $db->Insert_ID();
 	//storeFileinfo( $sessionid, $basepath, $fullpath, $name, $fileid, $level );
@@ -299,7 +308,7 @@ function storeLink( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 
 function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 {
-   global $update, $counter, $fscharset, $session;
+   global $update, $counter, $fscharset, $session, $db;
 
    echo "recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )\n";
 
@@ -315,6 +324,12 @@ function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 
 		$fullpath = "{$path}/{$file}";
 		$fullpath = trim( $fullpath, '/' );
+
+    // check for database
+    $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$sessionid} AND fullpath=".$db->qstr( $fullpath );
+    $num = intval( $db->GetOne( $sql ));
+    if( $num && !$update ) continue;
+
 		if( is_link( "{$basepath}/{$fullpath}" ))
 		{
 			echo "link: {$basepath}/{$fullpath} --> {$target}\n";
@@ -347,7 +362,7 @@ if( is_numeric( $argv[1] ))
 else
 {
 	$group = trim( $argv[1] );
-	$sql = "SELECT * FROM session WHERE `group`=".$db->qstr($group);
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `group`=".$db->qstr($group);
 	if( $group == 'all' ) $sql = "SELECT * FROM session";
 }
 
@@ -359,7 +374,7 @@ foreach( $rs as $row )
 
   $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$row['sessionid']}";
   $num = intval($db->GetOne( $sql ));
-  if( $num ) continue;
+  if( $num && !$update ) continue;
 
   $session = $row;
 
@@ -375,8 +390,19 @@ foreach( $rs as $row )
     $mount = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($mountpoint) ), $row['mount'] );
     $umount = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($mountpoint) ), $row['umount'] );
 
+    if( is_mounted( $mountpoint )){
+      echo $umount."\n";
+      passthru( $umount );
+      if( is_mounted( $mountpoint )){
+        die( "cannot umount {$mountpoint}");
+      }
+    }
     echo $mount."\n";
     passthru( $mount );
+    if( !is_mounted( $mountpoint )){
+      die( "cannot mount {$datapath} to {$mountpoint}");
+    }
+
   }
 
 	recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
