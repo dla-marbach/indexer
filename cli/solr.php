@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************/
- 
+
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 include( 'solr.inc.php' );
@@ -78,7 +78,7 @@ foreach( $srs as $srow )
 		$startrec = $page*$pagesize;
 
 		$sql = "
-		SELECT f.*, ilm.*, s.basepath, s.name AS sessionname, s.localpath, s.group
+		SELECT f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
 		FROM `session` s, `file` f
 		LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 		WHERE f.sessionid = s.sessionid

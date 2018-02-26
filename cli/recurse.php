@@ -25,9 +25,10 @@ namespace indexer;
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 
+$update = false;
 
 if( $argc < 2 ) die( "{$argv[0]} <sessionid|groupname>\n" );
-$update = true;
+if( $argc >= 3 ) $update = ( strtolower( $argv[2]) == 'update' );
 
 $counter = 0;
 
@@ -173,7 +174,7 @@ function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
   	{
   	}
   }
-	$sql = "INSERT INTO `file` (
+	$sql = "REPLACE INTO `file` (
       `sessionid`
     , `parentid`
     , `name`
@@ -243,7 +244,7 @@ function storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $
  	$strStat = doStat( "{$basepath}/{$fullpath}", $stat );
 	echo $strStat;
 
-	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
+	$sql = "REPLACE INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
     VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).",".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'dir', {$level}, {$stat['size']}, NULL, '".date( "Y-m-d H:i:s", $stat['ctime'] )."', '".date( "Y-m-d H:i:s", $stat['mtime'] )."', '".date( "Y-m-d H:i:s", $stat['atime'] )."', ".$db->qstr( $strStat ).", '' )";
 	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
@@ -267,7 +268,7 @@ function storeOther( $sessionid, $basepath, $localpath, $path, $fullpath, $name,
 		}
    }
 
-	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` )
+	$sql = "REPLACE INTO `file` ( `sessionid` , `parentid`, `name` , `path`, `fullpath` , `filetype` , `level` )
   VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).",".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'other', {$level} )";
 	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );
@@ -298,7 +299,7 @@ function storeLink( $sessionid, $basepath, $localpath, $path, $fullpath, $name, 
 
 	$target = readlink( "{$basepath}/{$fullpath}" );
 
-	$sql = "INSERT INTO `file` ( `sessionid` , `parentid`, `name` , `path` , `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
+	$sql = "REPLACE INTO `file` ( `sessionid` , `parentid`, `name` , `path` , `fullpath` , `filetype` , `level` , `filesize` , `sha256` , `filectime` , `filemtime` , `fileatime` , `stat` , `comment`)
   VALUES( {$sessionid}, {$parentid}, ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path )).", ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath )).", 'link', {$level}, {$stat['size']}, NULL, '".date( "Y-m-d H:i:s", $stat['ctime'] )."', '".date( "Y-m-d H:i:s", $stat['mtime'] )."', '".date( "Y-m-d H:i:s", $stat['atime'] )."', ".$db->qstr( $strStat ).", ".$db->qstr( $target )." )";
 	//echo "{$sql}\n";
 	$rs = $db->Execute( $sql );

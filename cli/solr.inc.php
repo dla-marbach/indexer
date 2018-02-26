@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************/
- 
+
 function updateDocument( $db, $sessionid, $fileid, $newdata, $config )
 {
 	static $paths = array();
@@ -104,8 +104,27 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $suggest = '';
    $thumb = null;
    $tikacontent = false;
+   $bestandid = $row['bestandid'];
 
-   $id = "{$sessionid}.{$fileid}";
+   $lock = $row['lock'];
+   $status = $row['status'];
+   $aclmeta = array();
+   $aclpreview = array();
+   $aclcontent = array();
+
+   $aclmeta[] = "{$bestandid}/locked";
+   $aclmeta[] = "dla/locked";
+   $aclpreview[] = "{$bestandid}/locked";
+   $aclpreview[] = "dla/locked";
+   $aclcontent[] = "{$bestandid}/locked";
+   $aclcontent[] = "dla/locked";
+   if( !$locked ) {
+     $aclmeta[] = "{$bestandid}/{$status}";
+     $aclpreview[] = "{$bestandid}/{$status}";
+     $aclcontent[] = "{$bestandid}/{$status}";
+   }
+
+   $id = "{$bestandid}.{$sessionid}.{$fileid}";
 
    $doc = new SolrInputDocument();
 
