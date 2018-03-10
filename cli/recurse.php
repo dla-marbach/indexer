@@ -32,266 +32,32 @@ if( $argc >= 3 ) $update = ( strtolower( $argv[2]) == 'update' );
 
 $counter = 0;
 
-function is_mounted( $dir ) {
-  global $config;
+require_once( 'indexer/helper.inc.php' );
+include( 'indexer/recurse_link.inc.php' );
+include( 'indexer/recurse_dir.inc.php' );
+include( 'indexer/recurse_file.inc.php' );
+include( 'indexer/recurse_other.inc.php' );
 
-  $cmd = $config['mountpoint']." -q ".escapeshellarg( $dir );
-  exec( $cmd, $output, $return_var );
-  return ($return_var == 0);
-}
+function storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
 
-function _escapeshellarg( $arg ) {
-  return "'{$arg}'";
-}
+  global $db, $update, $session;
 
-function log( $sessionid, $fileid, $status, $message ) {
-  global $db;
+  echo "storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level )\n";
 
-  $sql = "INSERT INTO log (sessionid, fileid, status, message )
-  VALUES( {$sessionid}
-    , {$fileid}
-    , ".$db->qstr( $status )."
-    , ".$db->qstr( $message )."
-    )";
-  $db->Execute( $sql );
-
-  $sql = "UPDATE `file` SET
-    readstate=".$db->qstr( $status )."
-    WHERE sessionid={$sessionid} AND fileid={$fileid}";
-  $db->Execute( $sql );
-}
-
-function doStat( $path, &$stat, &$isError )
-{
-   $isError = false;
-   $info = '';
-   $perms = fileperms( $path );
-	// Besitzer
-	$info .= (($perms & 0x0100) ? 'r' : '-');
-	$info .= (($perms & 0x0080) ? 'w' : '-');
-	$info .= (($perms & 0x0040) ?
-				(($perms & 0x0800) ? 's' : 'x' ) :
-				(($perms & 0x0800) ? 'S' : '-'));
-
-	// Gruppe
-	$info .= (($perms & 0x0020) ? 'r' : '-');
-	$info .= (($perms & 0x0010) ? 'w' : '-');
-	$info .= (($perms & 0x0008) ?
-				(($perms & 0x0400) ? 's' : 'x' ) :
-				(($perms & 0x0400) ? 'S' : '-'));
-
-	// Andere
-	$info .= (($perms & 0x0004) ? 'r' : '-');
-	$info .= (($perms & 0x0002) ? 'w' : '-');
-	$info .= (($perms & 0x0001) ?
-				(($perms & 0x0200) ? 't' : 'x' ) :
-				(($perms & 0x0200) ? 'T' : '-'));
-
-    $stat = lstat( $path );
-    if( $stat !== false )
-	{
-		$upw = posix_getpwuid( $stat['uid'] );
-		$uname = $upw['name'];
-		$ggr = posix_getgrgid( $stat['gid'] );
-		$gname = $ggr['name'];
-		$strStat = sprintf( "%s%s %u %s %s", (is_file( $path ) ? '-': (is_link( $path ) ? 'l': (is_dir( $path ) ? 'd':' '))), $info, $stat['nlink'], $uname, $gname );
-
-		$strStat .= "\n\n";
-		$strStat .= "perms: ".substr( sprintf( "%o", $perms ), -4 )."\n";
-		foreach( $stat as $key=>$val )
-		{
-		   if( is_int( $key )) continue;
-		   $strStat .= "{$key}: {$val}\n";
-		}
-
-	}
-	else
-	{
-	   $strStat .= "ERROR: cannot stat() file!\n";
-     $isError = true;
-	}
-
-	return $strStat;
-}
-
-function storeFile( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
-{
-   global $db, $config, $update, $session;
-
-   $canread = true;
-   if( $update )
-   {
-		$sql = "SELECT * FROM `file` WHERE sessionid={$sessionid} AND parentid={$parentid} AND name=".$db->qstr( $name );
-		$row = $db->getRow( $sql );
-		if( count( $row ))
-		{
-			echo "found!\n";
-      return;
-			$localcopy = $row['localcopy'];
-			$localfile = "{$localpath}/{$row['localcopy']}";
-			if( $localpath && (!is_file( $localfile ) || filesize( $localfile ) == 0 ))
-			{
-						echo "copy!\n";
-						$src = fopen( "{$basepath}/{$fullpath}", 'r' );
-            if( $src === false ) { $canread = false; }
-            else {
-  						$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
-  						$bytes = stream_copy_to_stream($src, $dest);
-  						fclose( $src );
-  						fclose( $dest );
-  						if( !$bytes ) {
-  							unlink( "{$localpath}/{$localcopy}" );
-  							$localcopy = null;
-  						}
-  						else chmod( "{$localpath}/{$localcopy}", 0644 );
-            }
-			}
-			return;
-		}
-   }
-
-   if( !is_file( "{$basepath}/{$fullpath}" )) {
-     log( $sessionid, $fileid, 'error', "not a file" );
-     return;
-    }
-
-  $localcopy = null;
-	if( $localpath )
-	{
-		$md5 = md5( "{$sessionid}:{$fullpath}" );
-		$localcopy = $md5{0}.'/'.$md5{1}.'/'.substr( $md5, 2 );
-
-		$src = fopen( "{$basepath}/{$fullpath}", 'r' );
-    if( $src === false ) {
-      $canread = false;
-    }
-    else {
-  		$dest = fopen( "{$localpath}/{$localcopy}", 'w' );
-  		$bytes = stream_copy_to_stream($src, $dest);
-  		fclose( $src );
-  		fclose( $dest );
-  		if( !$bytes ) {
-  		    unlink( "{$localpath}/{$localcopy}" );
-  			$localcopy = null;
-        $canread = false;
-  		}
-  		else chmod( "{$localpath}/{$localcopy}", 0644 );
-    }
-	}
-
-
-	$cmd = $config['sha256']." -b "._escapeshellarg( "{$basepath}/{$fullpath}" );
-  $sha256 = null;
-  if( $canread ) {
-  	$sha256 = shell_exec( $cmd );
-  	if( preg_match( "/^([0-9a-f]+) .*/", $sha256, $matches ))
-  	{
-  	   $sha256 = $matches[1];
-       if( strlen( $sha256 ) > 64 ) $sha256 = null;
-  	}
-  	else
-  	{
-  	}
-  }
-	$sql = "REPLACE INTO `file` (
-      `sessionid`
-    , `parentid`
-    , `name`
-    , `path`
-    , `fullpath`
-    , `localcopy`
-    , `filetype`
-    , `level`
-    , `filesize`
-    , `sha256`
-    , `filectime`
-    , `filemtime`
-    , `fileatime`
-    , `stat`
-    , `comment`
-    , relevance
-    , mtime
-  ) VALUES(
-    {$sessionid}
-    , {$parentid}
-    , ".$db->qstr( iconv( $session['fscharset'], 'UTF-8', $name ))."
-    , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path ))."
-    ,".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath ))."
-    ,".$db->qstr( $localcopy )."
-    , 'file'
-    , {$level}
-    , {$stat['size']}
-    , ".$db->qstr( $sha256 )."
-    , '".date( "Y-m-d H:i:s", $stat['ctime'] )."'
-    , '".date( "Y-m-d H:i:s", $stat['mtime'] )."'
-    , '".date( "Y-m-d H:i:s", $stat['atime'] )."'
-    , ".$db->qstr( $strStat )."
-    , ''
-    , 50
-    , NOW()
-    )";
-//	echo "{$sql}\n";
-	$rs = $db->Execute( $sql );
-	$fileid = $db->Insert_ID();
-
-}
-
-
-function storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
-{
-   global $db, $update, $session;
-
-   echo "storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )\n";
-
-   if( !is_dir( "{$basepath}/{$fullpath}" )) {
-     log( $sessionid, $fileid, , 'error', "not a directory" );
-     return;
-   }
-
-   $sql = "UPDATE `file` SET
-     readstate=".$db->qstr( 'ok' )."
-     , filetype=".$db->qstr( 'dir')."
-     WHERE sessionid={$sessionid} AND fileid={$fileid}";
-   $db->Execute( $sql );
-
-	recurse( $sessionid, $basepath, $localpath, $fullpath, $fileid, $level+1 );
-}
-
-function storeOther( $sessionid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
-{
-   global $db, $update;
-
-   $sql = "UPDATE `file` SET
-     readstate=".$db->qstr( 'ok' )."
-     , filetype=".$db->qstr( 'other')."
-     WHERE sessionid={$sessionid} AND fileid={$fileid}";
-   $db->Execute( $sql );
-}
-
-
-function storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $name, $parentid, $level )
-{
-   global $db, $update, $session;
-
-   if( !is_link( "{$basepath}/{$fullpath}" )) {
-     log( $sessionid, $fileid, 'error', 'not a symlink' );
-     return;
-   }
-
-	$target = readlink( "{$basepath}/{$fullpath}" );
-  if( $target === false ) {
-    log( $sessionid, $fileid, 'error', "readlink failed" );
+  if( !is_dir( "{$basepath}/{$fullpath}" )) {
+    log( $sessionid, $fileid, 'error', "not a directory" );
     return;
   }
 
   $sql = "UPDATE `file` SET
-    target=".$db->qstr( $target ).",
-    , readstate=".$db->qstr( $target===false ? 'error':'ok' )."
-    , filetype=".$db->qstr( 'link')."
+    readstate=".$db->qstr( 'ok' )."
+    , filetype=".$db->qstr( 'dir')."
     WHERE sessionid={$sessionid} AND fileid={$fileid}";
   $db->Execute( $sql );
 
+  recurse( $sessionid, $basepath, $localpath, $fullpath, $fileid, $level+1 );
 }
+
 
 function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 {
@@ -306,49 +72,75 @@ function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 		if( $file == '.' || $file == '..' ) continue;
 
     //$file = iconv($fscharset, "UTF-8", $file);
-
-		echo "#".($counter++)." {$sessionid}: {$basepath} // {$file} // {$localpath} ----\n";
-
-		$fullpath = "{$path}/{$file}";
+    $fullpath = "{$path}/{$file}";
 		$fullpath = trim( $fullpath, '/' );
 
+		echo "#".($counter++)." {$sessionid}: {$basepath} // {$file} // {$fullpath} ----\n";
+
+
+    $fileid = null;
+
     // check for database
-    $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$sessionid} AND fullpath=".$db->qstr( $fullpath );
-    $num = intval( $db->GetOne( $sql ));
-    // if record exists do not process
-    if( $num ) continue;
+    $sql = "SELECT fileid, readstate, filetype FROM file WHERE sessionid={$sessionid} AND path=".$db->qstr( $path )." AND name=".$db->qstr( $file ) ;
+    $row = $db->GetRow( $sql );
+    if( count( $row )) {
+      $fileid = $row['fileid'];
+      // if entry exists but is not ok, then delete it and retry
+      if(( $row['readstate'] == 'ok' ||  $row['readstate'] == 'skip' ) && $row['filetype'] != 'dir' ) {
+        echo "   --- skipping\n";
+        continue;
+      }
+    }
 
     // get status and permissions.
     $strStat = doStat( "{$basepath}/{$fullpath}", $stat, $statError );
 
-    // insert initial record. continue to next file on stat error
-    $sql = "INSERT INTO `FILE` (sessionid
-      , parentid
-      , name, path
-      , fullpath
-      , `level`
-      , `filesize`
-      , `filectime`
-      , `filemtime`
-      , `fileatime`
-      , `stat`
-      , readstate )
-      VALUES( {$sessionid}
-        , {$parentid}
-        , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $name ))."
-        , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path ))."
-        , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $fullpath ))."
-        , ".$db->qstr( $statError ? 'error':'start' )."
-        , {$level}
-        , {$stat['size']}
-        , '".date( "Y-m-d H:i:s", $stat['ctime'] )."'
-        , '".date( "Y-m-d H:i:s", $stat['mtime'] )."'
-        , '".date( "Y-m-d H:i:s", $stat['atime'] )."'
-        , ".$db->qstr( $strStat )."
-        )";
+    // if fileid is set, we must not create a new entry...
+    if( $fileid ) {
+      $sql = "UPDATE `file` SET
+        parentid={$parentid}
+        , name=".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $file ))."
+        , path=".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path ))."
+        , `level`={$level}
+        , `filesize`=".($statError ? 0 : intval($stat['size']))."
+        , `filectime`='".date( "Y-m-d H:i:s", $stat['ctime'] )."'
+        , `filemtime`='".date( "Y-m-d H:i:s", $stat['mtime'] )."'
+        , `fileatime`='".date( "Y-m-d H:i:s", $stat['atime'] )."'
+        , `stat`=".$db->qstr( $strStat )."
+        , readstate=".$db->qstr( $statError ? 'error':'start' )."
+        WHERE sessionid={$sessionid} AND fileid={$fileid}";
 
-    $db->Execute( $sql );
-    $fileid = $db->Insert_ID();
+      $db->Execute( $sql );
+    }
+    else {
+      // insert initial record. continue to next file on stat error
+      $sql = "INSERT INTO `file` (sessionid
+        , parentid
+        , name
+        , path
+        , `level`
+        , `filesize`
+        , `filectime`
+        , `filemtime`
+        , `fileatime`
+        , `stat`
+        , readstate )
+        VALUES( {$sessionid}
+          , {$parentid}
+          , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $file ))."
+          , ".$db->qstr(  iconv( $session['fscharset'], 'UTF-8', $path ))."
+          , {$level}
+          , ".($statError ? 0 : intval($stat['size']))."
+          , '".date( "Y-m-d H:i:s", $stat['ctime'] )."'
+          , '".date( "Y-m-d H:i:s", $stat['mtime'] )."'
+          , '".date( "Y-m-d H:i:s", $stat['atime'] )."'
+          , ".$db->qstr( $strStat )."
+          , ".$db->qstr( $statError ? 'error':'start' )."
+          )";
+
+      $db->Execute( $sql );
+      $fileid = $db->Insert_ID();
+    }
 
     // logentry on stat error
     if( $statError ) {
@@ -358,23 +150,22 @@ function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
     if( is_link( "{$basepath}/{$fullpath}" ))
 		{
 			echo "link: {$basepath}/{$fullpath} --> {$target}\n";
-      include( 'indexer/recurse_link.inc.php' );
-//			storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+			storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
 		}
 		elseif( is_dir( "{$basepath}/{$fullpath}" ))
 		{
 			echo "dir: {$basepath}/{$fullpath}\n";
-			storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+      storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
 		}
 		elseif( is_file( "{$basepath}/{$fullpath}" ))
 		{
 			echo "file: {$basepath}/{$fullpath}\n";
-			storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+      storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
 		}
 		else
 		{
 		   echo "other: {$basepath}/{$fullpath}\n";
-		   storeOther( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+       storeOther( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
 		}
    }
    closedir( $d );
@@ -398,10 +189,13 @@ $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
 
+  log($row['sessionid'], null, 'info', 'session starting session' );
   $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$row['sessionid']}";
   $num = intval($db->GetOne( $sql ));
-  if( $num && !$update ) continue;
-
+  if( $num && !$update ){
+    log($row['sessionid'], null, 'info', 'skipping session: '.$sql );
+    continue;
+  }
   $session = $row;
 
 	$basepath = $row['basepath'];
@@ -412,6 +206,12 @@ foreach( $rs as $row )
   //print_r( $session );
   $mount = null;
   $umount = null;
+
+  if( !$mountpoint ) {
+    log( $row['sessionid'], null, 'error', "no mountpoint" );
+    continue;
+  }
+
   if( $row['mount'] ) {
     $mount = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($mountpoint) ), $row['mount'] );
     $umount = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($mountpoint) ), $row['umount'] );
@@ -420,18 +220,23 @@ foreach( $rs as $row )
       echo $umount."\n";
       passthru( $umount );
       if( is_mounted( $mountpoint )){
+        log($row['sessionid'], null, 'error', "cannot umount {$mountpoint}" );
         die( "cannot umount {$mountpoint}");
       }
     }
     echo $mount."\n";
     passthru( $mount );
     if( !is_mounted( $mountpoint )){
+      log($row['sessionid'], null, 'error', "cannot mount {$datapath} to {$mountpoint}" );
       die( "cannot mount {$datapath} to {$mountpoint}");
     }
 
   }
 
 	recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
+
+  log($row['sessionid'], null, 'info', "session finished" );
+
 
   if( $mount ) {
     echo $umount."\n";

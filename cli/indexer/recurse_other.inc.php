@@ -1,11 +1,16 @@
 <?php
+namespace indexer;
 
-global $db, $update;
+require_once( 'indexer/helper.inc.php' );
 
-$sql = "UPDATE `file` SET
-  readstate=".$db->qstr( 'ok' )."
-  , filetype=".$db->qstr( 'other')."
-  WHERE sessionid={$sessionid} AND fileid={$fileid}";
-$db->Execute( $sql );
+function storeOther( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
 
+  global $db, $update;
+
+  $sql = "UPDATE `file` SET
+    readstate=".$db->qstr( 'ok' )."
+    , filetype=".$db->qstr( 'other')."
+    WHERE sessionid={$sessionid} AND fileid={$fileid}";
+  $db->Execute( $sql );
+}
  ?>
