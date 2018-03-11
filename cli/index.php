@@ -39,7 +39,7 @@ include( 'db.inc.php' );
 
 $pagesize = 20000;
 
-gc_enable(); // Enable Garbage Collector
+//gc_enable(); // Enable Garbage Collector
 
 if( $argc < 3 ) die( "{$argv[0]} <plugin> <sessionid> [update]\n" );
 
@@ -113,53 +113,65 @@ for( $page = $startpage; $page < $pages; $page++ )
 	LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
 	}
 	$sql .= "
-	WHERE f.sessionid = s.sessionid AND {$sessSQL} AND ".$pluginClass::where()."
-	LIMIT {$startrec}, {$pagesize}";
-	echo "{$sql}\n";
-	$rs = $db->Execute( $sql );
+	WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
+	LIMIT 0,1000";
+//	die();
+	$recs = 0;
+	do {
 
-	foreach( $rs as $row )
-	{
-		$sessionid = $row['sessionid'];
-		$fileid = $row['fileid'];
-		$basepath = $row['basepath'];
-		$datapath = $row['datapath'];
-		$fullpath = $row['fullpath'];
-		if( strlen( $row['localcopy'] )) $localfile = $row['localpath'].'/'.$row['localcopy'];
-		else $localfile = null;
-
-		if( $p % 1000 == 0 ) gc_collect_cycles();
-		$now = time();
-		$percent = ($p-$skip)*100/($num-$skip);
-		$elapsed = time()-$start;
-		$ges = $percent == 0 ? 0 : round(100*$elapsed/$percent);
-		$rest = $ges - $elapsed;
-		$percent = round( $percent );
-		echo "{$p}/{$num} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} =========\n";
-		$p++;
+		echo "{$sql}\n";
+			$rs = $db->Execute( $sql );
+			$recs = 0;
+			$data = array();
+			foreach( $rs as $row ) {
+				$data[] = $row;
+				$recs++;
+			}
+			$rs->Close();
 
 
-		$plugin->init( $db, $sessionid, $fileid, $datapath, $fullpath, $localfile );
+
+			foreach( $data as $row )
+			{
+				$sessionid = $row['sessionid'];
+				$fileid = $row['fileid'];
+				$basepath = $row['basepath'];
+				$datapath = $row['datapath'];
+				$fullpath = $row['path'].'/'.$row['name'];
+				$localfile = $row['localpath'].'/'.$row['localcopy'];
+
+				//if( $p % 1000 == 0 ) gc_collect_cycles();
+				$now = time();
+				$percent = ($p-$skip)*100/($num-$skip);
+				$elapsed = time()-$start;
+				$ges = $percent == 0 ? 0 : round(100*$elapsed/$percent);
+				$rest = $ges - $elapsed;
+				$percent = round( $percent );
+				echo "{$p}/{$num} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} =========\n";
+				$p++;
 
 
-	   if( !$update  &&  $plugin->check()) {
-			$skip++;
-			continue;
-		}
+				$plugin->init( $db, $sessionid, $fileid, $datapath, $fullpath, $localfile );
 
-	   try {
-			$plugin->index( $update );
-	   }
-	   catch( \Exception $e )
-	   {
-			echo $e;
-			continue;
-	   }
-	   $sql = "UPDATE `file` SET mtime=NOW() WHERE sessionid={$sessionid} AND fileid={$fileid}";
-	   echo "{$sql}\n";
-	   $db->Execute( $sql );
-	}
-	$rs->Close();
+
+			   if( !$update  &&  $plugin->check()) {
+					$skip++;
+					continue;
+				}
+
+			   try {
+					$plugin->index( $update );
+			   }
+			   catch( \Exception $e ) {
+					echo $e;
+					continue;
+			   }
+			   $sql2 = "UPDATE `file` SET mtime=NOW() WHERE sessionid={$sessionid} AND fileid={$fileid}";
+			   //echo "{$sql}\n";
+			   $db->Execute( $sql2 );
+			}
+			echo "recs: {$recs}\n";
+	} while( $recs == 1000 );
 }
-gc_disable(); // Disable Garbage Collector
+//gc_disable(); // Disable Garbage Collector
 ?>

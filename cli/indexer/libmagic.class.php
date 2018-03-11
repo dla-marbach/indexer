@@ -46,26 +46,34 @@ class LibMagic extends Plugin
 
 		$db = $this->db;
 
-		if( !isset( $finfo )) $finfo = new \finfo();
-		$text = $finfo->file( $this->file );
-		$mime_type = $finfo->file( $this->file, FILEINFO_MIME_TYPE );
-		$mime_encoding = $finfo->file( $this->file, FILEINFO_MIME_ENCODING );
-		echo  "  {$text} // {$mime_type} // {$mime_encoding}\n";
-		$sql = "INSERT INTO info_libmagic( sessionid, fileid, mimetype, mimeencoding, description )
-				VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $mime_type ).", ".$db->qstr( $mime_encoding ).", ".$db->qstr( $text )." )";
-		//echo "{$sql}\n";
-		$db->Execute( $sql );
+		try {
+			if( !isset( $finfo )) $finfo = new \finfo();
+			$text = $finfo->file( $this->file );
+			$mime_type = $finfo->file( $this->file, FILEINFO_MIME_TYPE );
+			$mime_encoding = $finfo->file( $this->file, FILEINFO_MIME_ENCODING );
+			echo  "  {$text} // {$mime_type} // {$mime_encoding}\n";
+			$sql = "INSERT INTO info_libmagic( sessionid, fileid, mimetype, mimeencoding, description, status )
+					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $mime_type ).", ".$db->qstr( $mime_encoding ).", ".$db->qstr( $text ).", ".$db->qstr( 'ok' )." )";
+			//echo "{$sql}\n";
+			$db->Execute( $sql );
+		}
+		catch( \Exception $e ) {
+			$sql = "INSERT INTO info_libmagic( sessionid, fileid, description, status )
+					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $e ).", ".$db->qstr( 'error' )." )";
+			//echo "{$sql}\n";
+			$db->Execute( $sql );
+		}
 		unset( $text );
 	}
 
 	public static function where()
 	{
-		return "f.filetype<>'other'";
+		return "f.filetype<>'other' AND ilm.mimetype IS NULL";
 	}
 
 	public static function joins()
 	{
-		return array( ); // 'ilm'=>'info_libmagic' );
+		return array( 'ilm'=>'info_libmagic' );
 	}
 
 }

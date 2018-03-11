@@ -207,7 +207,7 @@ foreach( $rs as $row )
   $mount = null;
   $umount = null;
 
-  if( !$mountpoint ) {
+  if( !$mountpoint || strlen( $mountpoint ) < 3 ) {
     log( $row['sessionid'], null, 'error', "no mountpoint" );
     continue;
   }
