@@ -54,7 +54,7 @@ $srs = $db->Execute( $sql );
 foreach( $srs as $srow )
 {
 	$config['solr']['path'] = $srow['solrpath'];
-	$client = new SolrClient($config['solr']);
+	$client = new \Solarium\Client($solarium_config);
 
 	$p = 1;
 	$start = time();
@@ -90,7 +90,9 @@ foreach( $srs as $srow )
 
 		foreach( $rs as $row )
 		{
-		   $sessionid = intval( $row['sessionid'] );
+
+			$bestandid = intval( $row['bestandid'] );
+			$sessionid = intval( $row['sessionid'] );
 		   $fileid = intval( $row['fileid'] );
 		   if( !$fileid || !$sessionid ) continue;
 

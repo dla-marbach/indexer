@@ -30,11 +30,13 @@ class Autoloader {
     spl_autoload_register(array(new self, 'load'));
   }
 
-  public static function load( $class ) {
-    if( substr( $class, 0, 8 ) == 'Solarium' ) {
-      $class = str_replace( array( 'Solarium', '\\' ), array( '', '/' ));
-      $file = diname(__FILE__).$class.'.php';
-      require( $file );
+  public static function load( $name ) {
+    static $solrinc = __DIR__.'/lib/solarium/src';
+
+    if( substr( $name, 0, 8 ) == 'Solarium' ) {
+      $fname = $solrinc.str_replace( '\\', '/', substr( $name, strlen( 'Solarium' ))).'.php';
+      if( !file_exists( $fname )) throw new \Exception("Kann {$name} - {$fname} nicht laden.");
+      require( $fname );
     }
   }
 }

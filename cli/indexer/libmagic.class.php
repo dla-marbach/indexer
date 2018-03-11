@@ -68,7 +68,7 @@ class LibMagic extends Plugin
 
 	public static function where()
 	{
-		return "f.filetype<>'other' AND ilm.mimetype IS NULL";
+		return "f.filetype<>'other' AND ilm.status IS NULL";
 	}
 
 	public static function joins()

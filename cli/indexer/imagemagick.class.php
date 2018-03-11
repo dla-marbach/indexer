@@ -45,7 +45,7 @@ class ImageMagick extends Plugin
 		global $config;
 		$db = $this->db;
 	   $cmd = $config['identify']."  -format 'Format: %m; Geometry: %wx%h; xres: %x; yres: %y;' ".escapeshellarg( "{$this->file}" ).' 2>&1';
-	   echo "$cmd\n";
+	   //echo "$cmd\n";
 	   $info = shell_exec( $cmd );
 	   echo "$info\n";
 
@@ -56,11 +56,20 @@ class ImageMagick extends Plugin
 			$height = intval( $matches[3] );
 			$xres = $matches[4];
 			$yres = $matches[5];
-			$thumb = $config['thumb'];
+			$thumb = $this->file.'.imagick.thumb.png';
 
-			$sql = ($update ? 'REPLACE':'INSERT')." INTO info_imagick ( sessionid, fileid, magick, width, height, xres, yres, fullinfo )
-					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $magick ).", {$width}, {$height}, ".$db->qstr( $xres ).", ".$db->qstr( $yres ).", ".$db->qstr( $info )." )";
-			echo "{$sql}\n";
+			$sql = "INSERT INTO info_imagick ( sessionid, fileid, magick, width, height, xres, yres, fullinfo, status )
+					VALUES( {$this->sessionid}
+						, {$this->fileid}
+						, ".$db->qstr( $magick )."
+						, {$width}
+						, {$height}
+						, ".$db->qstr( $xres )."
+						, ".$db->qstr( $yres )."
+						, ".$db->qstr( $info )."
+						, ".$db->qstr( 'ok' )."
+						 )";
+//			echo "{$sql}\n";
 			$db->Execute( $sql );
 
 			if( file_exists( $thumb )) unlink( $thumb );
@@ -68,32 +77,18 @@ class ImageMagick extends Plugin
 			echo "$cmd\n";
 			shell_exec( $cmd );
 
-			try {
-				if( file_exists( $thumb ))
-				{
-					$db->UpdateBlobFile( 'info_imagick', 'thumb', $thumb, "sessionid={$this->sessionid} AND fileid={$this->fileid}" );
-					unlink( $thumb );
-				}
-			}
-			catch( Exception $e )
-			{
-				var_dump($e);
-				adodb_backtrace($e->gettrace());
-				$sql = "UPDATE info_imagick SET thumb=NULL WHERE sessionid={$this->sessionid} AND fileid={$this->fileid}";
-				echo "{$sql}\n";
-				$db->Execute( $sql );
-			}
-
 		}
 		else
 		{
-			echo "Error identifying image: {$cmd}\n";
-			$sql = ($update ? 'REPLACE':'INSERT')." INTO info_imagick ( sessionid, fileid, fullinfo )
-					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $info )." )";
-			echo "{$sql}\n";
+			$sql = "INSERT INTO info_imagick ( sessionid, fileid, fullinfo, status )
+					VALUES( {$this->sessionid}
+						, {$this->fileid}
+						, ".$db->qstr( $info )."
+						, ".$db->qstr( 'error' )."
+						 )";
+//			echo "{$sql}\n";
 			$db->Execute( $sql );
-			// $this->out->write( " error" );
-			// throw new \Exception( "Error identifying image: {$cmd}" );
+			echo "Error identifying image: {$cmd}\n";
 		}
 	}
 
@@ -101,13 +96,14 @@ class ImageMagick extends Plugin
 	{
 		return "(ilm.`mimetype` LIKE 'image/%' OR ilm.`mimetype` LIKE 'application/pdf' OR
 				 igi.`mimetype` LIKE 'image/%' OR igi.`mimetype` LIKE 'application/pdf' )
-				 ";
+				 AND iim.status IS NULL";
 	}
 
 	public static function joins()
 	{
 		return array( 'ilm'=>'info_libmagic',
 					  'igi'=>'info_gvfs_info',
+						'iim'=>'info_imagick',
 					);
 	}
 

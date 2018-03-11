@@ -101,22 +101,20 @@ WHERE f.sessionid = s.sessionid AND {$sessSQL} AND ".$pluginClass::where();
 	$num = intval( $db->GetOne( $sql ));
 $pages = ceil( $num/$pagesize );
 $p = $startpage * $pagesize;
-for( $page = $startpage; $page < $pages; $page++ )
+
+$sql = "
+SELECT f.*, s.basepath, s.localpath, s.datapath
+FROM `session` s, `file` f";
+foreach( $pluginClass::joins() as $short=>$dbname )
 {
-	$startrec = $page*$pagesize;
-	$sql = "
-	SELECT f.*, s.basepath, s.localpath, s.datapath
-	FROM `session` s, `file` f";
-	foreach( $pluginClass::joins() as $short=>$dbname )
-	{
-		$sql .= "
-	LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
-	}
 	$sql .= "
-	WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
-	LIMIT 0,1000";
-//	die();
-	$recs = 0;
+LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
+}
+$sql .= "
+WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
+LIMIT 0,1000";
+$recs = 0;
+
 	do {
 
 		echo "{$sql}\n";
@@ -128,8 +126,6 @@ for( $page = $startpage; $page < $pages; $page++ )
 				$recs++;
 			}
 			$rs->Close();
-
-
 
 			foreach( $data as $row )
 			{
@@ -172,6 +168,5 @@ for( $page = $startpage; $page < $pages; $page++ )
 			}
 			echo "recs: {$recs}\n";
 	} while( $recs == 1000 );
-}
 //gc_disable(); // Disable Garbage Collector
 ?>

@@ -54,24 +54,27 @@ class GVFSInfo extends Plugin
 		}
 		if( strlen( $info ))
 		{
-			$sql = ($update ? 'REPLACE':'INSERT')." INTO info_gvfs_info ( sessionid, fileid, mimetype, fullinfo )
-					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $mime_type ).", ".$db->qstr( $info )." )";
+			$sql = "INSERT INTO info_gvfs_info ( sessionid, fileid, mimetype, fullinfo, status )
+					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $mime_type ).", ".$db->qstr( $info ).", ".$db->qstr( 'ok' )." )";
 			//echo "{$sql}\n";
 			$db->Execute( $sql );
 		}
 		else
 		{
-			 throw new \Exception( "Error gettin info of {$this->fullpath}\n" );
+			$sql = "INSERT INTO info_gvfs_info ( sessionid, fileid, status )
+					VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $mime_type ).", ".$db->qstr( $info ).", ".$db->qstr( 'error' )." )";
+			//echo "{$sql}\n";
+			$db->Execute( $sql );
 		}
 	}
 	public static function where()
 	{
-		return "1=1";
+		return "igi.status IS NULL";
 	}
 
 	public static function joins()
 	{
-		return array( ); // 'igi'=>'info_gvfs_info' );
+		return array( 'igi'=>'info_gvfs_info' );
 	}
 }
 

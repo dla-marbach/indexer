@@ -21,11 +21,11 @@
  * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************/
 
-function updateDocument( $db, $sessionid, $fileid, $newdata, $config )
+function updateDocument( $db, $bestandid, $sessionid, $fileid, $newdata, $config )
 {
 	static $paths = array();
 	$data = array();
-	$data['id'] = "{$sessionid}.{$fileid}";
+	$data['id'] = "{$bestandid}.{$sessionid}.{$fileid}";
 	foreach( $newdata as $key=>$value )
 	{
 		$data[$key] = array( 'set'=>$value );
@@ -44,13 +44,13 @@ function updateDocument( $db, $sessionid, $fileid, $newdata, $config )
 	exec( $curl );
 }
 
-function updateDocumentSolarium( $db, $sessionid, $fileid, $newdata, $config )
+function updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $newdata, $config )
 {
 	global $config, $solarium_config;
 
 	static $paths = array();
 	$data = array();
-	$data['id'] = "{$sessionid}.{$fileid}";
+	$data['id'] = "{$bestandid}.{$sessionid}.{$fileid}";
 	foreach( $newdata as $key=>$value )
 	{
 		$data[$key] = array( 'set'=>$value );
@@ -94,9 +94,10 @@ function updateDocumentSolarium( $db, $sessionid, $fileid, $newdata, $config )
 
 function addDocument( $db, $row, $client, $config, $echo = true )
 {
+	$bestandid = intval( $row['bestandid'] );
    $sessionid = intval( $row['sessionid'] );
-   $fileid = intval( $row['fileid'] );
-   if( !$fileid || !$sessionid ) continue;
+	 $fileid = intval( $row['fileid'] );
+   if( !$fileid || !$sessionid ) return;
 
 //		   $counter++;
 //		   if( $echo ) echo "{$counter}/{$num}\n";
@@ -104,7 +105,6 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $suggest = '';
    $thumb = null;
    $tikacontent = false;
-   $bestandid = $row['bestandid'];
 
    $lock = $row['lock'];
    $status = $row['status'];
@@ -116,22 +116,34 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $aclmeta[] = "dla/locked";
    $aclpreview[] = "{$bestandid}/locked";
    $aclpreview[] = "dla/locked";
-   $aclcontent[] = "{$bestandid}/locked";
-   $aclcontent[] = "dla/locked";
-   if( !$locked ) {
+   $acldata[] = "{$bestandid}/locked";
+   $acldata[] = "dla/locked";
+   if( !$lock ) {
      $aclmeta[] = "{$bestandid}/{$status}";
      $aclpreview[] = "{$bestandid}/{$status}";
-     $aclcontent[] = "{$bestandid}/{$status}";
+     $acldata[] = "{$bestandid}/{$status}";
    }
-
    $id = "{$bestandid}.{$sessionid}.{$fileid}";
 
-   $doc = new SolrInputDocument();
+	 // get an update query instance
+	 $update = $client->createUpdate();
+
+   $doc = $update->createDocument();
 
    $doc->addField('id', $id);
 
    $doc->addField('status.locked', $row['lock']);
    $doc->addField('status.status', $row['status']);
+
+	 foreach( $aclmeta as $acl ) {
+		 $doc->addField( 'acl_meta', $acl );
+	 }
+	 foreach( $aclpreview as $acl ) {
+		 $doc->addField( 'acl_preview', $acl );
+	 }
+	 foreach( $acldata as $acl ) {
+		 $doc->addField( 'acl_data', $acl );
+	 }
 
    $doc->addField('session.id', $sessionid);
    $doc->addField('session.name', $row['sessionname']);
@@ -145,8 +157,8 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('file.level', $row['level']);
    $doc->addField('file.name', $row['name']);
    $doc->addField('file.path', $row['path']);
-   $doc->addField('file.fullpath', $row['fullpath']);
-   $doc->addField('file.extension', pathinfo( $row['fullpath'], PATHINFO_EXTENSION ));
+   $doc->addField('file.fullpath', $row['path'].'/'.$row['name']);
+   $doc->addField('file.extension', pathinfo( $row['name'], PATHINFO_EXTENSION ));
    $doc->addField('file.filetype', $row['filetype']);
    if( strlen( $row['sha256'] )) $doc->addField('file.sha256', $row['sha256']);
    $doc->addField('file.filesize', $row['filesize']);
@@ -163,8 +175,8 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('file.access', $row['access']);
    $doc->addField('file.relevance', $row['relevance']);
 
-   $doc->addField('status.status', $row['status']);
-   $doc->addField('status.locked', $row['locked']);
+//   $doc->addField('status.status', $row['status']);
+//   $doc->addField('status.locked', $row['lock']);
 
 
    $doc->addField('libmagic.mimetype', $row['mimetype']);
@@ -206,6 +218,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		}
    }
 
+/*
    $sql = "SELECT * FROM info_detex WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -217,14 +230,14 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		}
 		//$suggest = $row2['content'];
    }
-
+*/
    if( !$suggest )
    {
-	   $sql = "SELECT * FROM info_antiword WHERE sessionid={$sessionid} AND fileid={$fileid} AND hascontent=1";
+	   $sql = "SELECT * FROM info_antiword WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
 	   $row2 = $db->getRow( $sql );
 	   if( $row2 && is_array( $row2 ) && count( $row2 ))
 	   {
-			$fname = "{$row['localpath']}/{$row['localcopy']}{$config['antiword_file_ext']}.gz";
+			$fname = "{$row['localpath']}/{$row['localcopy']}.antiword.gz";
 			if( file_exists( $fname ))
 			{
 				ob_start();
@@ -238,7 +251,8 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 	   }
    }
 
-   $sql = "SELECT * FROM info_xscc WHERE sessionid={$sessionid} AND fileid={$fileid}";
+/*
+   $sql = "SELECT * FROM info_xscc WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
@@ -249,34 +263,44 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 			if( !$suggest ) $suggest = $content;
 		}
    }
+*/
 
-
-   $sql = "SELECT * FROM info_imagick WHERE sessionid={$sessionid} AND fileid={$fileid}";
+   $sql = "SELECT * FROM info_imagick WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
 		if( $row2['width'] ) $doc->addField('imagick.width', $row2['width']);
 		if( $row2['height'] ) $doc->addField('imagick.height', $row2['height']);
 		if( $row2['fullinfo'] ) $doc->addField('imagick.fullinfo', $row2['fullinfo']);
-		if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
+		$fname = "{$row['localpath']}/{$row['localcopy']}".'.imagick.thumb.png';
+		if( file_exists( $fname ))
+		{
+			$thumb = base64_encode( file_get_contents( $fname ));
+		}
+		//if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
    }
 
-   $sql = "SELECT * FROM info_avconv WHERE sessionid={$sessionid} AND fileid={$fileid}";
+   $sql = "SELECT * FROM info_avconv WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
 		if( $row2['fullinfo'] ) $doc->addField('avconv.fullinfo', $row2['fullinfo']);
-		if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
+		$fname = "{$row['localpath']}/{$row['localcopy']}".'.avconv.thumb.png';
+		if( file_exists( $fname ))
+		{
+			$thumb = base64_encode( file_get_contents( $fname ));
+		}
+//		if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
    }
 
-   $sql = "SELECT info.ProductCode, np.ProductName, np.ProductVersion, np.ApplicationType, np.Language, nm.MfgName, no.OpSystemName, no.OpSystemVersion, nm2.MfgName AS OpMfgName FROM info_nsrl info, NSRLProd np, NSRLOS no, NSRLMfg nm, NSRLMfg nm2 WHERE info.ProductCode=np.ProductCode AND np.OpSystemCode=no.OpSystemCode AND np.MfgCode=nm.MfgCode AND no.MfgCode=nm2.MfgCode AND sessionid={$sessionid} AND fileid={$fileid}";
+   $sql = "SELECT info.ProductCode, np.ProductName, np.ProductVersion, np.ApplicationType, np.Language, nm.MfgName, no.OpSystemName, no.OpSystemVersion, nm2.MfgName AS OpMfgName FROM info_nsrl info, NSRLProd np, NSRLOS no, NSRLMfg nm, NSRLMfg nm2 WHERE info.ProductCode=np.ProductCode AND np.OpSystemCode=no.OpSystemCode AND np.MfgCode=nm.MfgCode AND no.MfgCode=nm2.MfgCode AND sessionid={$sessionid} AND fileid={$fileid} AND info.ProductCode IS NOT NULL";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
 		if( $echo ) echo "nsrl...";
 		$doc->addField('nsrl.found', true);
 		if( strlen( $row2['ProductCode'] )) $doc->addField('nsrl.ProductCode', $row2['ProductCode']);
-		if( strlen( $row2['ProductName'] )) $doc->addField('nsrl.ProductName', $row2['ProductName']);
+		if( strlen( $row2['Produc	tName'] )) $doc->addField('nsrl.ProductName', $row2['ProductName']);
 		if( strlen( $row2['ProductVersion'] )) $doc->addField('nsrl.ProductVersion', $row2['ProductVersion']);
 		if( strlen( $row2['ApplicationType'] )) $doc->addField('nsrl.ApplicationType', $row2['ApplicationType']);
 		if( strlen( $row2['Language'] )) $doc->addField('nsrl.Language', $row2['Language']);
@@ -297,22 +321,25 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 	if( $echo ) echo "suggest...";
 	$suggest = iconv("UTF-8", "UTF-8//IGNORE", trim( $suggest));
 	$doc->addField('suggest', $suggest );
-	$doc->addField('shorttext', iconv("UTF-8", "UTF-8//IGNORE", substr( $suggest, 0, 1024 )));
+	$doc->addField('shorttext', @iconv("UTF-8", "UTF-8//IGNORE", substr( $suggest, 0, 1024 )));
 	}
 
    try {
 	if( $echo ) echo "add...";
-	$updateResponse = $client->addDocument($doc, true, 10000);
+	$updateResponse = $update->addDocument($doc, true, 10000);
+	$result = $client->update($update);
 	}
-	catch( SolrClientException $e )
+	catch( \Exception $e )
 	{
 		if( $echo ) echo $e;
 		print_r( $doc->toArray() );
 		die();
 	}
 
-   $resp = $updateResponse->getResponse();
-   if( $resp->responseHeader->status != 0 ) print_r($resp);
+	echo 'Update query executed'."\n";
+	echo 'Query status: ' . $result->getStatus()."\n";
+	echo 'Query time: ' . $result->getQueryTime()."\n";
+
 
    if( $echo ) echo "\n";
 

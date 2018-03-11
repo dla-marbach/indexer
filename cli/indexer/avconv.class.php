@@ -44,7 +44,7 @@ class AVConv extends Plugin
 	public function index( $update )
 	{
 		global $config;
-		$thumb = $config['thumb'];
+		$thumb = $this->file.'.avconv.thumb.png';
 		$db = $this->db;
 //	   $cmd = "bash -c \"".$config['avconv']." -i ".escapeshellarg( "{$this->basepath}/{$this->fullpath}")." &>{$config['tempfolder']}/avconv.out; cat {$config['tempfolder']}/avconv.out\"";
 	   $cmd = $config['avconv']." -i ".escapeshellarg( "{$this->file}")." 2>&1";
@@ -54,14 +54,11 @@ class AVConv extends Plugin
 //	   $p = strpos( $info, '[' );
 //	   if( $p ) $info = substr( $info, $p );
 	   echo "$info\n";
-		$sql = ($update ? 'REPLACE':'INSERT')." INTO info_avconv ( sessionid, fileid, fullinfo )
-				VALUES( {$this->sessionid}, {$this->fileid}, ".$db->qstr( $info )." )";
-		echo "{$sql}\n";
-		$db->Execute( $sql );
 
 		if( file_exists( $thumb )) unlink( $thumb );
 		if( file_exists( $thumb.'.png' )) unlink( $thumb.'.png' );
 		//if( file_exists( $thumb.'.svg' )) unlink( $thumb.'.svg' );
+
 
 		if( preg_match( "/Stream #[^ ]*: Video/", $info ) )
 		{
@@ -71,36 +68,32 @@ class AVConv extends Plugin
 			$cmd = $config['convert'].' '.escapeshellarg( "{$thumb}.png" ).' -resize 120x90 -sharpen 4 '.escapeshellarg( $thumb );
 			echo "$cmd\n";
 			shell_exec( $cmd );
+			if( file_exists( $thumb.'.png' )) unlink( $thumb.'.png' );
 		}
-		try {
-			if( file_exists( $thumb ))
-			{
-				$db->UpdateBlobFile( 'info_avconv', 'thumb', $thumb, "sessionid={$this->sessionid} AND fileid={$this->fileid}" );
-				unlink( $thumb );
-				//unlink( $thumb.".svg" );
-				//unlink( $thumb.".wav" );
-			}
-		}
-		catch( Exception $e )
-		{
-			var_dump($e);
-			adodb_backtrace($e->gettrace());
-			$sql = "UPDATE info_imagick SET thumb=NULL WHERE sessionid={$sessionid} AND fileid={$fileid}";
-			echo "{$sql}\n";
-			$db->Execute( $sql );
-		}
+
+		$sql = "INSERT INTO info_avconv ( sessionid, fileid, fullinfo, status )
+				VALUES( {$this->sessionid}
+					, {$this->fileid}
+					, ".$db->qstr( $info )."
+					, ".$db->qstr( preg_match( "/Duration: .*/", $info ) ? 'ok' : 'error' )."
+					 )";
+//			echo "{$sql}\n";
+		$db->Execute( $sql );
 	}
 
 	public static function where()
 	{
 		return "(ilm.`mimetype` LIKE 'video/%' OR ilm.`mimetype` LIKE 'audio/%' OR
-				 igi.`mimetype` LIKE 'video/%' OR igi.`mimetype` LIKE 'audio/%')";
+				 igi.`mimetype` LIKE 'video/%' OR igi.`mimetype` LIKE 'audio/%')
+				 AND iav.status IS NULL";
 	}
 
 	public static function joins()
 	{
 		return array( 'ilm'=>'info_libmagic',
-					  'igi'=>'info_gvfs_info' );
+					  'igi'=>'info_gvfs_info',
+					 	'iav'=>'info_avconv',
+					);
 	}
 
 }
