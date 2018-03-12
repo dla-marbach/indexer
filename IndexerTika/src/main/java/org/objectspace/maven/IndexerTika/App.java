@@ -22,11 +22,16 @@
 
 package org.objectspace.maven.IndexerTika;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -34,17 +39,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.output.CountingOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -68,88 +71,121 @@ public class App
 		    	Connection conn = DriverManager.getConnection(dsn);
 
 		    	AutoDetectParser parser = new AutoDetectParser();
-		        BodyContentHandler handler = new BodyContentHandler(20*1024*1024);
+		        //BodyContentHandler handler = new BodyContentHandler(20*1024*1024);
 		        Metadata metadata = new Metadata();		    	
 		    	
 		    	Statement stmtFiles = null;
-		    	PreparedStatement replaceStmt = null;
+		    	PreparedStatement insertStmt = null;
 		    	ResultSet rs = null;
 		    	try {
-		    		String replaceSQL = "REPLACE INTO info_tika VALUES( ?, ?, ?, ?, ?, ?, ?)";
-		    		replaceStmt = conn.prepareStatement(replaceSQL);
+		    		String insertSQL = "INSERT INTO info_tika(sessionid, fileid, mimetype, mimeencoding, fullinfo, hascontent, status) "
+		    				+ "VALUES( ?, ?, ?, ?, ?, ?, ?)";
+		    		insertStmt = conn.prepareStatement(insertSQL);
 		    		
 			    	stmtFiles = conn.createStatement();
-			    	rs = stmtFiles.executeQuery("SELECT * FROM cachefiles WHERE sessionid="+sessionid);
-			    	while (rs.next()) {
-			    		String filename = rs.getString("cachefile");
-			    		Integer fileid = rs.getInt("fileid");
-			    		System.out.println(filename);
-			    		File initialFile = new File(filename);
-			    		if( ! initialFile.exists()) { continue; } 
-			            try (InputStream stream = new FileInputStream(initialFile)) {
-			            	try {
-			            		parser.parse(stream, handler, metadata);
-				                String metastr = "";
-				                for( String property: metadata.names() ) {
-				                	metastr += "["+property+"]: "+metadata.get(property)+"\n";
-				                }
-				                metastr = metastr.trim();
-				                
-				                String mimetype = metadata.get("Content-Type");
-				                int spaceIndex = mimetype.indexOf( " " );
-				                if( spaceIndex != -1 ) {
-				                	mimetype = mimetype.substring(0, spaceIndex-1);
-				                }
-				                String encoding = metadata.get("Content-Encoding");
-				                /*
-				                String content = handler.toString()
-				                		.replaceAll("[^\\p{L}\\p{N}.\n\r,*()?!\"$%':; ]", " " )
-				                		.replaceAll( "\\s+", " " )
-				                		.trim();
-				                */
-				                String content = handler.toString().trim();
-				                
-				                replaceStmt.setInt( 1, sessionid );
-				                replaceStmt.setInt( 2, fileid );
-				                replaceStmt.setString( 3, mimetype );
-				                replaceStmt.setString( 4, encoding );
-				                replaceStmt.setString( 5, metastr );
-				                replaceStmt.setInt( 6, content.length() > 0 ? 1 : 0 );
-				                replaceStmt.setString( 7,  "done" );
-				                replaceStmt.executeUpdate();
-
-				                if( content.length() > 0 ) {
-					                String zipname = filename+".tika.txt.gz";
+			    	
+			    	int num;
+					do {
+				    	num = 0;
+				    	List<IndexerFile> fileList = new ArrayList<IndexerFile>();
+				    	rs = stmtFiles.executeQuery("SELECT f.sessionid, f.fileid, f.cachefile FROM cachefiles f "
+				    			+ "LEFT JOIN info_tika it ON (f.sessionid=it.sessionid AND f.fileid=it.fileid) "
+				    			+ "WHERE it.status IS NULL AND f.sessionid="+sessionid
+				    			+ " LIMIT 0,1000");
+				    	while (rs.next()) {
+				    		String filename = rs.getString("cachefile");
+				    		Integer fileid = rs.getInt("fileid");
+				    		fileList.add(new IndexerFile( sessionid, fileid, filename ));
+				    		num++;
+				    	}
+				    	rs.close();
+				    	
+				    	for (IndexerFile f : fileList) {
+				    		String filename = f.localfile;
+				    		Integer fileid = f.fileid;
+				    		System.out.println(filename);
+				    		File initialFile = new File(filename);
+				    		if( ! initialFile.exists()) { continue; } 
+				            try (InputStream stream = TikaInputStream.get(initialFile.toPath(), metadata )) { // new FileInputStream(initialFile)) {
+				            	try {
+					                Path zipname = Paths.get( filename+".tika.txt.gz" );
 					                System.out.println("Writing "+zipname );
-					                FileOutputStream os = new FileOutputStream( zipname );
-					                GZIPOutputStream zip = new GZIPOutputStream(os);
-					                zip.write(content.getBytes());
-					                zip.close();
-					                os.close();
-				                }
-				                
-				                System.out.println(metastr);
-			            		
-			            	}
-			            	catch( Throwable e ) {
-			            		System.out.println("Strange Parser ERROR");
-			            		e.printStackTrace();
-				                replaceStmt.setInt( 1, sessionid );
-				                replaceStmt.setInt( 2, fileid );
-				                replaceStmt.setNull(3, Types.VARCHAR);
-				                replaceStmt.setNull(4, Types.VARCHAR);
-				                replaceStmt.setString( 5, e.getMessage() );
-				                replaceStmt.setNull(5, Types.INTEGER);
-				                replaceStmt.setNull(6, Types.INTEGER);
-				                replaceStmt.setString( 7,  "error" );
-				                replaceStmt.executeUpdate();
-
-			            	}
-//			                return handler.toString();
-//			                return metadata.toString();
-			            }			    		
-			    	}
-		    	
+					                
+					                FileOutputStream fos = new FileOutputStream( zipname.toString() );
+					                GZIPOutputStream zip = new GZIPOutputStream(fos);
+					                CountingOutputStream cnt = new CountingOutputStream( zip );
+					                OutputStreamWriter out = new OutputStreamWriter( cnt, UTF_8 );				              
+	
+					                BodyContentHandler handler = new BodyContentHandler(out);
+				            
+				            		parser.parse(stream, handler, metadata);
+	
+					                String metastr = "";
+					                for( String property: metadata.names() ) {
+					                	metastr += "["+property+"]: "+StringUtils.abbreviate( metadata.get(property), 250 )+"\n";
+					                }
+					                metastr = metastr.trim();
+					                
+					                String mimetype = metadata.get("Content-Type");
+					                int spaceIndex = mimetype.indexOf( " " );
+					                if( spaceIndex != -1 ) {
+					                	mimetype = mimetype.substring(0, spaceIndex-1);
+					                }
+					                String encoding = metadata.get("Content-Encoding");
+					                /*
+					                String content = handler.toString()
+					                		.replaceAll("[^\\p{L}\\p{N}.\n\r,*()?!\"$%':; ]", " " )
+					                		.replaceAll( "\\s+", " " )
+					                		.trim();
+					                */
+	//				                String content = handler.toString().trim();
+					                
+					                int contentSize = cnt.getCount();
+					                
+				            		out.close();
+				            		cnt.close();
+				            		zip.close();
+					                fos.close();
+	
+					                insertStmt.setInt( 1, sessionid );
+					                insertStmt.setInt( 2, fileid );
+					                insertStmt.setString( 3, mimetype );
+					                insertStmt.setString( 4, encoding );
+					                insertStmt.setString( 5, metastr );
+					                insertStmt.setInt( 6, contentSize > 0 ? 1 : 0 );
+					                insertStmt.setString( 7,  "ok" );
+					                insertStmt.executeUpdate();
+					                
+					                if( contentSize < 5 ) {
+					                	System.out.println( "deleting "+zipname.toString());
+					                	Files.delete(zipname);
+					                }
+	
+					                System.out.println(StringUtils.abbreviate(metastr, 300 ));
+				            		
+				            	}
+				            	catch( SQLException e ) {
+				            		throw e;
+				            	}
+				            	catch( Throwable e ) {
+				            		System.out.println("Strange Parser ERROR");
+				            		e.printStackTrace();
+					                insertStmt.setInt( 1, sessionid );
+					                insertStmt.setInt( 2, fileid );
+					                insertStmt.setNull(3, Types.VARCHAR);
+					                insertStmt.setNull(4, Types.VARCHAR);
+					                insertStmt.setString( 5, e.getMessage() );
+					                insertStmt.setNull(5, Types.INTEGER);
+					                insertStmt.setNull(6, Types.INTEGER);
+					                insertStmt.setString( 7,  "error" );
+					                insertStmt.executeUpdate();
+	
+				            	}
+	//			                return handler.toString();
+	//			                return metadata.toString();
+				            }			    		
+				    	}
+		    		} while( num == 1000 );
 		    	}
 		    	catch (SQLException ex){
 		    	    // handle any errors
