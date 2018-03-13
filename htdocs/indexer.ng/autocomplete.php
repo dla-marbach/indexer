@@ -27,7 +27,7 @@ $solarium = new Solarium\Client( $solarium_config );
 
 if( $category == 'text' )
 {
-	if( !strlen( $searchTerm )) 
+	if( !strlen( $searchTerm ))
 	{
 		echo json_encode( null );
 		exit;
@@ -37,9 +37,9 @@ if( $category == 'text' )
 	$query->setDictionary( 'suggest' );
 	$query->setCount( 10 );
 	$query->setCollate( true );
-	
+
 	$resultset = $solarium->suggester($query);
-	
+
 	$result = array();
 	foreach( $resultset as $term => $termresult )
 	{
@@ -52,21 +52,21 @@ else
 	$select = $solarium->createSelect();
 	$helper = $select->getHelper();
 	$facetSet = $select->getFacetSet();
-	
+
 	$_q = buildQuery( $query, $hlq, $helper );
-	
+
 	//$filterQuery = new Solarium\QueryType\Select\Query\FilterQuery();
 	//$facet = new Solarium\QueryType\Select\Query\Component\Facet\Field();
-	
-	
+
+
 	if( !strlen( $_q )) $_q = '*:*';
-	
+
 	$select->setQuery( $_q );
 	$select->setRows( 0 )->setStart( 0 );
 	$field = $facetSet->createFacetField( 'daFacet' );
 	//$field->setSort( Solarium\QueryType\Select\Query\Component\Facet\Field::SORT_INDEX );
-	$field->setSort( Solarium\QueryType\Select\Query\Component\Facet\Field::SORT_COUNT );
-	
+	$field->setSort( get_class( $field )::SORT_COUNT );
+
 
 	if( strlen( $searchTerm )) {
 		$field->setPrefix( $searchTerm );
@@ -81,7 +81,7 @@ else
 	switch( $category )
 	{
 		case 'ext':
-			$field->setSort( Solarium\QueryType\Select\Query\Component\Facet\Field::SORT_COUNT );
+			$field->setSort(get_class( $field )::SORT_COUNT );
 			break;
 	}
 	$field->setField( $facets[$category] );
