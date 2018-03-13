@@ -37,7 +37,7 @@ namespace indexer;
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 
-$pagesize = 20000;
+$pagesize = 3000;
 
 //gc_enable(); // Enable Garbage Collector
 
@@ -112,7 +112,7 @@ LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$s
 }
 $sql .= "
 WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
-LIMIT 0,1000";
+LIMIT 0,{$pagesize}";
 $recs = 0;
 
 	do {
@@ -167,6 +167,6 @@ $recs = 0;
 			   $db->Execute( $sql2 );
 			}
 			echo "recs: {$recs}\n";
-	} while( $recs == 1000 );
+	} while( $recs == $pagesize );
 //gc_disable(); // Disable Garbage Collector
 ?>
