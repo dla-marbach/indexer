@@ -1,0 +1,20 @@
+<?php
+
+$_usergroups = array();
+$_usergroups['admin'] = array();
+$_usergroups['admin'][] = 'je';
+$_usergroups['admin'][] = 'admin';
+$_usergroups['admin'][] = 'holl';
+
+$_usergroups['editor'] = array();
+$_usergroups['editor'][] = 'editor';
+
+
+function inGroup( $grp, $name )
+{
+	global $_usergroups;
+	
+	return in_array( $name, $_usergroups[$grp] );
+}
+
+?>

@@ -1,0 +1,6 @@
+# .htaccess, Simpel-Schutz fuer /indexer
+AuthType Basic
+AuthName "Digitaler Nachlass Kittler"
+AuthUserFile /usr/local/etc/.htusers
+Require Valid-User
+
