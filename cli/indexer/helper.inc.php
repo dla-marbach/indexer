@@ -17,7 +17,7 @@ function _escapeshellarg( $arg ) {
 function log( $sessionid, $fileid, $status, $message ) {
   global $db;
 
-  $sql = "INSERT INTO log (sessionid, fileid, status, message )
+  $sql = "INSERT INTO indexlog (sessionid, fileid, status, message )
   VALUES( {$sessionid}
     , ".($fileid ? $fileid : 'null')."
     , ".$db->qstr( $status )."
