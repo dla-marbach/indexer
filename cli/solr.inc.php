@@ -65,18 +65,19 @@ function updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $newdata,
 		//error_log( "SELECT solrpath FROM session WHERE sessionid={$sessionid} -> {$path}" );
 	}
 
-	if( strlen( $path )) $solarium_config['endpoint']['localhost']['path'] = $path;
+	//if( strlen( $path )) $solarium_config['endpoint']['localhost']['path'] = $path;
 	$client = new Solarium\Client( $solarium_config );
 
 	$update = $client->createUpdate();
 	$doc = $update->createDocument();
-	$doc->setKey( 'id', "{$sessionid}.{$fileid}");
+	$doc->setKey( 'id', "{$bestandid}.{$sessionid}.{$fileid}");
 	foreach( $newdata as $key=>$value )
 	{
 		$doc->addField( $key, $value, $doc->getBoost(), \Solarium\QueryType\Update\Query\Document\Document::MODIFIER_SET );
 	}
 	$update->addDocument( $doc, null, 20000 );
-	//$update->addCommit( true );
+	// add commit command to the update query
+	$update->addCommit();
 
 	$rb = $update->getRequestBuilder();
 	error_log( $rb->getRawData( $update ));

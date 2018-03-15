@@ -5,16 +5,16 @@
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
   <title>Volltext Archiv</title>
 
-  <link href="vendor/bootstrap-3.0.0/dist/css/bootstrap.min.css" rel="stylesheet">  
-  
+  <link href="vendor/bootstrap-3.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link rel="stylesheet" href="lib/css/reset.css" type="text/css" media="screen" charset="utf-8">
   <link rel="stylesheet" href="lib/css/icons.css" type="text/css" media="screen" charset="utf-8">
   <link rel="stylesheet" href="lib/css/workspace.css" type="text/css" media="screen" charset="utf-8">
   <link rel="stylesheet" href="vendor/jquery-ui-1.10.4.custom/css/smoothness/jquery-ui-1.10.4.custom.css" type="text/css" media="screen" charset="utf-8">
- 
+
   <script src="vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js" type="text/javascript" charset="utf-8"></script>
   <script src="vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js" type="text/javascript" charset="utf-8"></script>
-	
+
   <script src="vendor/underscore-1.4.3.js" type="text/javascript" charset="utf-8"></script>
   <script src="vendor/backbone-0.9.10.js" type="text/javascript" charset="utf-8"></script>
   <script src="lib/js/visualsearch.js" type="text/javascript" charset="utf-8"></script>
@@ -31,7 +31,7 @@
   <script src="lib/js/templates/templates.js" type="text/javascript" charset="utf-8"></script>
 
   <script src="vendor/bootstrap-3.0.0/dist/js/bootstrap.js" type="text/javascript" charset="utf-8"></script>
-  
+
   <style type="text/css">
 	label { display:block; }
 	input.text { margin-bottom:12px; width:95%; padding: .4em; }
@@ -74,9 +74,9 @@
     <script type="text/javascript" charset="utf-8">
 	function setKeywords(signature)
 	{
-		
+
 	}
-	
+
 	function execSearch( page )
 	{
 		$("body").css( 'cursor', 'wait' );
@@ -94,7 +94,7 @@
 				 'z-index': 5000
 			  });
 			  $("#overlay").show();
-	  
+
 	     facets = window.visualSearch.searchQuery.facets();
 		 query = window.visualSearch.searchQuery.serialize();
 		 query_plain = $("#query_plain").val();
@@ -115,16 +115,16 @@
 		$("html, body").animate({ scrollTop: 0 }, "slow");
 	}
 
-	function newquery( qstr ) 
+	function newquery( qstr )
 	{
 		window.visualSearch.searchBox.setQuery( qstr );
 		window.visualSearch.searchBox.searchEvent( $('#search_box_container') );
 		$("html, body").animate({ scrollTop: 0 }, "slow");
 	}
-	
+
 	function updateStatus( id, status )
 	{
-		
+
 		$("body").css( 'cursor', 'wait' );
 		$.ajax({
 					  type: "POST",
@@ -132,13 +132,13 @@
 					  data: { id: id, status: status },
 					  dataType: "html"
 					}).done(function( msg ) {
-					  var $content = $('#ampel'+id.replace( '.', '' ));
+					  var $content = $('#ampel'+id.replace( '.', '' ).replace( '.', '' ));
 					  $content.html( msg );
 					  $("body").css( 'cursor', 'default' );
 					  //$("#overlay").hide();
 					});
 	}
-	
+
       $(document).ready(function() {
 		query = decodeURIComponent( window.location.hash.slice(1));
         window.visualSearch = VS.init({
@@ -216,18 +216,18 @@
             },
             facetMatches : function(callback) {
               callback([
-                'group', 
-				'mime', 
-				'type', 
-				'text', 
-				'ext', 
-				'name', 
-				'session', 
-				'id', 
+                'group',
+				'mime',
+				'type',
+				'text',
+				'ext',
+				'name',
+				'session',
+				'id',
 				'checksum',
-				'path', 
-				'tikainfo', 
-				'size', 
+				'path',
+				'tikainfo',
+				'size',
 				'mtime',
 				'ctime',
 				'atime',
@@ -243,8 +243,8 @@
 		$("#do_plain").val( 0 );
 		execSearch( 1 );
       });
-	  
-	  
+
+
     </script>
 <div id="content">
 

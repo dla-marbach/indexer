@@ -116,4 +116,13 @@ foreach( $srs as $srow )
 	}
 }
 $srs->Close();
+echo "> commit...\n";
+$update = $client->createUpdate();
+
+// add commit command to the update query
+$update->addCommit();
+
+// this executes the query and returns the result
+$result = $client->update($update);
+
 ?>

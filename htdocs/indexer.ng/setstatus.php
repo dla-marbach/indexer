@@ -9,12 +9,13 @@ include( 'groups.inc.php' );
 
 header( "Content-type: text/html" );
 
-list( $sessionid, $fileid ) = explode( '.', $_REQUEST['id'] );
+list( $bestandid, $sessionid, $fileid ) = explode( '.', $_REQUEST['id'] );
+$bestandid = intval( $bestandid );
 $sessionid = intval( $sessionid );
 $fileid = intval( $fileid );
 if( !$sessionid || !$fileid ) die( "<b>no valid id</b>" );
 $status = $_REQUEST['status'];
-$id = "{$sessionid}.{$fileid}";
+$id = "{$bestandid}.{$sessionid}.{$fileid}";
 
 $user = array_key_exists( 'REMOTE_USER', $_SERVER ) ? $_SERVER['REMOTE_USER'] : 'unknown';
 
@@ -25,7 +26,7 @@ $isAdmin = true;
 
 $ok = false;
 
-$data = array(); 
+$data = array();
 switch( $status ) {
 	case 'lock':
 		$data['status.locked'] = true;
@@ -55,7 +56,7 @@ if( $ok ) {
 	echo "<!-- $sql -->\n";
 	$db->Execute( $sql );
 	$db->Execute( $sql_log );
-	updateDocumentSolarium( $db, $sessionid, $fileid, $data, $config );
+	updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $data, $config );
 }
 $sql = "SELECT `lock`, `status` FROM `file` WHERE sessionid={$sessionid} AND fileid={$fileid}";
 echo "<!-- $sql -->\n";

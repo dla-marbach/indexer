@@ -22,8 +22,8 @@
  ***********************************************************/
 
 require_once( 'config.inc.php' );
-include("lib/adodb5/adodb-exceptions.inc.php");
-include("lib/adodb5/adodb.inc.php");
+include(__DIR__."/lib/adodb5/adodb-exceptions.inc.php");
+include(__DIR__."/lib/adodb5/adodb.inc.php");
 
 $db = NewADOConnection( 'mysqli' );
 $db->Connect( $config['db']['server'],
