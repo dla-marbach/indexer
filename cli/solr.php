@@ -78,10 +78,11 @@ foreach( $srs as $srow )
 		$startrec = $page*$pagesize;
 
 		$sql = "
-		SELECT f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
-		FROM `session` s, `file` f
+		SELECT b.name AS bestandname, f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
+		FROM bestand b, `session` s, `file` f
 		LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 		WHERE f.sessionid = s.sessionid
+		AND s.bestandid = b.bestandid
 		AND s.sessionid = {$srow['sessionid']}
 		AND f.mtime > ".$db->qstr( $srow['solrtime'] )."
 		LIMIT {$startrec}, {$pagesize}";

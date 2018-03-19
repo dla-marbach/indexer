@@ -146,7 +146,9 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		 $doc->addField( 'acl_data', $acl );
 	 }
 
-   $doc->addField('session.id', $sessionid);
+	 $doc->addField('bestand.id', $bestandid);
+   $doc->addField('bestand.name', $row['bestandname']);
+	 $doc->addField('session.id', $sessionid);
    $doc->addField('session.name', $row['sessionname']);
    $doc->addField('session.basepath', $row['basepath']);
    $doc->addField('session.localpath', $row['localpath']);
@@ -301,7 +303,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		if( $echo ) echo "nsrl...";
 		$doc->addField('nsrl.found', true);
 		if( strlen( $row2['ProductCode'] )) $doc->addField('nsrl.ProductCode', $row2['ProductCode']);
-		if( strlen( $row2['Produc	tName'] )) $doc->addField('nsrl.ProductName', $row2['ProductName']);
+		if( strlen( $row2['ProductName'] )) $doc->addField('nsrl.ProductName', $row2['ProductName']);
 		if( strlen( $row2['ProductVersion'] )) $doc->addField('nsrl.ProductVersion', $row2['ProductVersion']);
 		if( strlen( $row2['ApplicationType'] )) $doc->addField('nsrl.ApplicationType', $row2['ApplicationType']);
 		if( strlen( $row2['Language'] )) $doc->addField('nsrl.Language', $row2['Language']);
