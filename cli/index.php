@@ -46,7 +46,7 @@ if( $argc < 3 ) die( "{$argv[0]} <plugin> <sessionid> [update]\n" );
 $pluginClass = 'indexer\\'.trim( $argv[1] );
 //$sessionid = intval( $argv[2] );
 
-if( is_numeric( $argv[2] ))
+if( is_numeric( trim($argv[2]) ))
 {
 	$sessionid = intval( $argv[2] );
 	$sessSQL = "s.sessionid=".$sessionid;

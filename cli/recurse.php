@@ -34,7 +34,7 @@ $counter = 0;
 
 require_once( 'indexer/helper.inc.php' );
 include( 'indexer/recurse_link.inc.php' );
-include( 'indexer/recurse_dir.inc.php' );
+//include( 'indexer/recurse_dir.inc.php' );
 include( 'indexer/recurse_file.inc.php' );
 include( 'indexer/recurse_other.inc.php' );
 
@@ -174,13 +174,13 @@ function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 if( is_numeric( $argv[1] ))
 {
 	$sessionid = intval( $argv[1] );
-	$sql = "SELECT * FROM session WHERE sessionid=".$sessionid;
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND sessionid=".$sessionid;
 }
 else
 {
 	$group = trim( $argv[1] );
 	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `group`=".$db->qstr($group);
-	if( $group == 'all' ) $sql = "SELECT * FROM session";
+	if( $group == 'all' ) $sql = "SELECT * FROM session WHERE `ignore`=0";
 }
 
 //$row = $db->getRow( $sql );

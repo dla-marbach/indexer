@@ -129,12 +129,12 @@ if( $hlq )
 
 $hasError = false;
 try {
-	
+
 	$resultset = $solarium->select( $select );
 }
 catch( \Solarium\Exception\HttpException $e )
 {
-	if( !$hlq ) 
+	if( !$hlq )
 	{
 		echo "\n<code>\n{$_q}\n</code><p />\n";
 		echo "\n<code>\n{$e}\n</code>\n";
@@ -142,7 +142,7 @@ catch( \Solarium\Exception\HttpException $e )
 	}
 	$hasError = true;
 	echo "\n<code>\nSOLR Error: trying again without highlighting\n</code><p />\n";
-}	
+}
 if( $hasError )
 {
 	$hlq = null;
@@ -159,7 +159,7 @@ if( $hasError )
 		echo "\n<code>\n{$_q}\n</code><p />\n";
 		echo "\n<code>\n{$e}\n</code>\n";
 		exit;
-	}	
+	}
 
 }
 	$highlighting = ( $hlq ? $resultset->getHighlighting() : null );
@@ -180,7 +180,7 @@ if( $hasError )
 		<?php if( $do_plain ) echo '<img width="20px" src="icons/ampel/green.png">'; ?>
 	</div>
 <?php
-	include( 'paging.inc.php' ); 
+	include( 'paging.inc.php' );
 	?>
 	<div id="accordion" class="panel-group">
 	<!-- style>
@@ -221,15 +221,15 @@ if( $hasError )
 		$locked = $doc['status.locked'];
 		$status = $doc['status.status'];
 
-		if( !$fileid ) 
+		if( !$fileid )
 		{
-?>		
+?>
 			<div class="panel panel-default">
 				<div class="panel-heading" style="vertical-align: top; width: 100%; min-height: 115px;">
 					<b>#<?php echo $id; ?> ERROR!!!</b>
 				</div>
 			</div>
-<?php			
+<?php
 		}
 		else
 		{
@@ -241,7 +241,7 @@ if( $hasError )
 			}
 			if( !$isAdmin && $locked )
 			{
-	?>		
+	?>
 						<div class="panel panel-default">
 							<div class="panel-heading" style="vertical-align: top; width: 100%; min-height: 115px;">
 								<b>#<?php echo $id; ?> locked</b>
@@ -253,7 +253,7 @@ if( $hasError )
 		}
 		$icon = 'icons/mimetypes/gnome-mime-application-x-reject.svg';
 
-		if( $hasGVFS ) 
+		if( $hasGVFS )
 		{
 			if( preg_match( '/standard::icon: .*, gnome-mime-([a-z-]*), .*/', $doc['gvfs_info.fullinfo'], $matches ))
 			{
@@ -272,8 +272,8 @@ if( $hasError )
 				}
 			}
 		}
-		
-		
+
+
 		if( strlen( $doc['gvfs_info.mimetype'] ))
 		{
 			$mimetype = $doc['gvfs_info.mimetype'];
@@ -283,7 +283,7 @@ if( $hasError )
 		{
 			$mimetype = $doc['libmagic.mimetype'];
 		}
-		
+
 	?>
 
 		<div class="panel panel-default">
@@ -299,19 +299,19 @@ if( $hasError )
 				</div>
 				<div class="panel-title" style="font-size: 125%;">
 				<!-- session.group -->
-				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'group:<?php echo htmlspecialchars( $doc['session.group'][0] ); ?>' );"><?php echo implode( '/', $doc['session.group'] ); ?></a></span> 
+				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'group:<?php echo htmlspecialchars( $doc['session.group'][0] ); ?>' );"><?php echo implode( '/', $doc['session.group'] ); ?></a></span>
 
 				<!-- session.id -->
-				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?>' );"><?php echo $doc['session.name']; ?></a></span> 
+				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?>' );"><?php echo $doc['session.name']; ?></a></span>
 
 
 				<!-- unique identifier -->
 				<span style="color:#000000;" class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'checksum:<?php echo htmlspecialchars( $doc['file.sha256'] ); ?>' );">#<?php echo $doc['id']; ?></a></span>
-				
+
 				<!-- download -->
-				<?php if( $hasFile && $status != 'yellow' && $status != 'red' ) { ?><a href="raw.php?file=<?php echo urlencode( $localfile ); ?>&mime=<?php echo urlencode( $mimetype ); ?>&name=<?php echo urlencode( $doc['file.name'] ); ?>" target="_new">    
+				<?php if( $hasFile && $status != 'yellow' && $status != 'red' ) { ?><a href="raw.php?file=<?php echo urlencode( $localfile ); ?>&mime=<?php echo urlencode( $mimetype ); ?>&name=<?php echo urlencode( $doc['file.name'] ); ?>" target="_new">
 				<span class="glyphicon glyphicon-download"></span></a> <?php } ?>
-				<?php if( $doc['file.filetype'] == 'dir' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", ($path=='/'?'':$path)."/{$filename}" ))); ?>' );">    
+				<?php if( $doc['file.filetype'] == 'dir' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", ($path=='/'?'':$path)."/{$filename}" ))); ?>' );">
 				<span class="glyphicon glyphicon-list"></span></a> <?php } ?>
 
 				<!-- status -->
@@ -352,11 +352,11 @@ if( $hasError )
 				<br />
 
 				<!-- file.extension -->
-				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'ext:<?php echo htmlspecialchars( $doc['file.extension'] ); ?>' );"><?php echo str_replace( ' ', '&nbsp;', sprintf( "% 3s", $doc['file.extension'] )); ?></a></span> 
+				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'ext:<?php echo htmlspecialchars( $doc['file.extension'] ); ?>' );"><?php echo str_replace( ' ', '&nbsp;', sprintf( "% 3s", $doc['file.extension'] )); ?></a></span>
 
 				<!-- file.name -->
 				<a style="color:#000000;" href="javascript:newquery( 'name:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $filename ))); ?>' );">
-				<b style="font-size: 14px; "><?php echo htmlspecialchars( $filename ); ?></b> 
+				<b style="font-size: 14px; "><?php echo htmlspecialchars( $filename ); ?></b>
 				</a>
 
 				<!-- mimetype -->
@@ -365,7 +365,7 @@ if( $hasError )
 				<!-- file.size -->
 				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'size:<?php echo $size; ?>' );">
 				<?php echo _format_bytes( $size ); ?></a></span>
-				
+
 
 				<!-- file.mtime -->
 				<?php
@@ -374,14 +374,14 @@ if( $hasError )
 				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'mtime:<?php echo $date->format( "Y-m-d"  ); ?>' );">
 				<?php echo $doc['file.filemtime']; ?>
 				</a></span>
-				
+
 				<!-- file.path -->
 				<div style="padding-left: 24px;">
 					<a style="color:#909090;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $path ))); ?>' );"><?php echo htmlspecialchars( $path ); ?></a>
 				</div>
 					<!-- suggest -->
 					<div style="color: black;">
-	<?php 
+	<?php
 		$highlightedDoc = $hlq ? $highlighting->getResult($id) : null;
 		if( $highlightedDoc && (($status != 'yellow' && $status != 'red') || $isAdmin ))
 		{
@@ -394,7 +394,7 @@ if( $hasError )
 	?>
 				<p />
 					</div>
-				
+
 				</div>
     </div>
     <div id="collapse<?php echo $num; ?>" class="panel-collapse collapse">
@@ -409,13 +409,13 @@ if( $hasError )
 						<?php if( $hasAVCONV ) { ?><li><a href="#avconv<?php echo $num; ?>">avconv</a></li><?php } ?>
 						<?php if( $hasNSRL ) { ?><li><a href="#nsrl<?php echo $num; ?>">nsrl</a></li><?php } ?>
 						<li><a href="#cite<?php echo $num; ?>">cite this item</a></li>
-					</ul>			
+					</ul>
 					<div class="tab-content">
 						<div class="tab-pane active" id="content<?php echo $num; ?>"><pre style="border: none;"><?php if(($status != 'yellow' && $status != 'red') || $isAdmin) { echo ( htmlspecialchars( substr( $doc['shorttext'], 0, 1024 ))); } ?></pre>&nbsp;</div>
 						<div class="tab-pane" id="file<?php echo $num; ?>"><pre style="border: none;"><?php echo htmlspecialchars( $doc['file.stat'] ); ?></pre></div>
 						<div class="tab-pane" id="libmagic<?php echo $num; ?>" style=""><pre style="border: none;">
-	<b>mimetype: </b><?php echo htmlspecialchars( $doc['libmagic.mimetype'] ); ?> 
-	<b>mimeencoding: </b><?php echo htmlspecialchars( $doc['libmagic.mimeencoding'] ); ?> 
+	<b>mimetype: </b><?php echo htmlspecialchars( $doc['libmagic.mimetype'] ); ?>
+	<b>mimeencoding: </b><?php echo htmlspecialchars( $doc['libmagic.mimeencoding'] ); ?>
 	<b>description: </b><?php echo htmlspecialchars( $doc['libmagic.description'] ); ?></pre></dl>
 						</div>
 						<?php if( $hasGVFS ) { ?>
@@ -424,7 +424,7 @@ if( $hasError )
 						<?php if( $hasTIKA ) { ?>
 						<div class="tab-pane" id="tika<?php echo $num; ?>"><pre style="border: none;"><?php echo htmlspecialchars( $doc['tika.fullinfo'] ); ?></pre></div>
 						<?php } ?>
-						
+
 						<?php if( $hasIMAGICK ) { ?>
 						<div class="tab-pane" id="imagick<?php echo $num; ?>">
 							<pre style="border: none;"><?php echo htmlspecialchars( $doc['imagick.fullinfo'] ); ?></pre>
@@ -447,7 +447,7 @@ if( $hasError )
 <b>OpSystemVersion: </b><?php echo htmlspecialchars( $doc['nsrl.OpSystemVersion'] ); ?><br />
 <b>OpMfgName: </b><?php echo htmlspecialchars( $doc['nsrl.OpMfgName'] ); ?></pre></div>
 						<?php } ?>
-						<div class="tab-pane" id="cite<?php echo $num; ?>"><pre>#<?php echo $doc['id']; ?>, <?php echo $mimetype; ?> (<?php echo $doc['file.filemtime']; ?>). <?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $filename ))); ?>, in: <i><?php echo $config['cite']['asset']; ?>/<?php echo $config['cite']['institution']; ?></i>. <?php echo $doc['session.name']; ?>:/<?php echo htmlspecialchars( $path ); ?> [<?php echo implode( '/', $doc['session.group'] ); ?>, <?php echo _format_bytes( $size ); ?>].</pre></div>
+						<div class="tab-pane" id="cite<?php echo $num; ?>"><pre>#<?php echo $doc['id']; ?>, <?php echo $mimetype; ?> (<?php echo $doc['file.filemtime']; ?>). <?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $filename ))); ?>, in: <i><?php echo htmlspecialchars( $doc['bestand.name'] ); ?></i>. <?php echo $doc['session.name']; ?>:/<?php echo htmlspecialchars( $path ); ?> [<?php echo implode( '/', $doc['session.group'] ); ?>, <?php echo _format_bytes( $size ); ?>].</pre></div>
 <script>
   $(function () {
     //$('#fileTab<?php echo $num; ?> a:first').tab('show')
@@ -460,15 +460,15 @@ if( $hasError )
 					</div>
       </div>
     </div>
-  </div>		
+  </div>
 	<?php
 	} // foreach( $response->response->docs as $doc )
 	?>
 	</div>
 
 	<?php
-	include( 'paging.inc.php' ); 
-	
+	include( 'paging.inc.php' );
+
 ?>
-<?php	
+<?php
 ?>

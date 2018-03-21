@@ -1,4 +1,15 @@
-<!DOCTYPE HTML>
+<?php
+require_once( 'config.inc.php' );
+require_once( $indexerPath.'/db.inc.php' );
+
+if( array_key_exists( 'onlinebestand', $config )) {
+  $sql = "SELECT name FROM bestand WHERE bestandid=".$config['onlinebestand'];
+  $titlestr = $db->getOne( $sql );
+}
+else {
+  $titlestr = 'Iron Maiden - The Indexer';
+}
+?><!DOCTYPE HTML>
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
@@ -46,7 +57,7 @@
    <!-- Main jumbotron for a primary marketing message or call to action -->
     <div class="jumbotron">
       <div class="container">
-		<h1>Digitaler Nachlass <b>Friedrich A. Kittler</b></h1>
+		<h1><?php echo htmlspecialchars( $titlestr ); ?></h1>
       </div>
     </div>
 	<div class="navbar navbar-inverse navbar-fixed-top">
