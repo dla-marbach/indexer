@@ -11,7 +11,7 @@ function is_mounted( $dir ) {
 }
 
 function _escapeshellarg( $arg ) {
-  return "'{$arg}'";
+  return "'.str_replace("'", "'\''", $arg).'";
 }
 
 function log( $sessionid, $fileid, $status, $message ) {
