@@ -69,7 +69,8 @@ function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
   }
 
   $sql = "UPDATE `file` SET
-   sha256=".$db->qstr( $sha256 )."
+   ext=".$db->qstr( pathinfo( $this->fullpath, PATHINFO_EXTENSION ) )."
+   , sha256=".$db->qstr( $sha256 )."
    , localcopy=".$db->qstr( $localcopy )."
    , readstate=".$db->qstr( 'ok' )."
    , filetype=".$db->qstr( 'file')."
