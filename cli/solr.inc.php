@@ -335,7 +335,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 	catch( \Exception $e )
 	{
 		if( $echo ) echo $e;
-		print_r( $doc->toArray() );
+		//print_r( $doc->toArray() );
 		die();
 	}
 

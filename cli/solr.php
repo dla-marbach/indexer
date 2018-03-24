@@ -108,6 +108,15 @@ foreach( $srs as $srow )
 			$p++;
 
 			addDocument( $db, $row, $client, $config, true );
+
+			if( $p % 1000 == 0 ) {
+				//$client->commit();
+				$t = $start;
+				$start = time();
+				$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$t}) WHERE sessionid={$srow['sessionid']}";
+				echo "{$sql}\n";
+				$db->Execute($sql);
+			}
 		}
 		$rs->Close();
 		//$client->commit();
@@ -115,15 +124,11 @@ foreach( $srs as $srow )
 		echo "{$sql}\n";
 		$db->Execute($sql);
 	}
+	echo "> commit...\n";
+	$update = $client->createUpdate();
+	$update->addCommit();
+	$result = $client->update($update);
 }
 $srs->Close();
-echo "> commit...\n";
-$update = $client->createUpdate();
-
-// add commit command to the update query
-$update->addCommit();
-
-// this executes the query and returns the result
-$result = $client->update($update);
 
 ?>
