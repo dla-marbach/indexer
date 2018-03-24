@@ -110,24 +110,22 @@ foreach( $srs as $srow )
 			addDocument( $db, $row, $client, $config, true );
 
 			if( $p % 1000 == 0 ) {
-				//$client->commit();
-				$t = $start;
-				$start = time();
-				$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$t}) WHERE sessionid={$srow['sessionid']}";
-				echo "{$sql}\n";
-				$db->Execute($sql);
+				echo "> commit...\n";
+				$update = $client->createUpdate();
+				$update->addCommit();
+				$result = $client->update($update);
 			}
 		}
 		$rs->Close();
-		//$client->commit();
-		$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$start}) WHERE sessionid={$srow['sessionid']}";
-		echo "{$sql}\n";
-		$db->Execute($sql);
 	}
 	echo "> commit...\n";
 	$update = $client->createUpdate();
 	$update->addCommit();
 	$result = $client->update($update);
+	//$client->commit();
+	$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$start}) WHERE sessionid={$srow['sessionid']}";
+	echo "{$sql}\n";
+	$db->Execute($sql);
 }
 $srs->Close();
 
