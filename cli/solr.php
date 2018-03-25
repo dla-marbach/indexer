@@ -25,7 +25,7 @@ require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 include( 'solr.inc.php' );
 
-$pagesize = 20000;
+$pagesize = 3000;
 
 gc_enable(); // Enable Garbage Collector
 
@@ -47,14 +47,7 @@ else
 if( $argc > 2 ) $update = trim( strtolower( $argv[2] )) == 'update';
 else $update = false;
 
-$sql = 	"SELECT sessionid, solrpath, solrtime FROM session s WHERE ".$sessSQL;
-echo "{$sql}\n";
-$srs = $db->Execute( $sql );
-
-foreach( $srs as $srow )
-{
-	$config['solr']['path'] = $srow['solrpath'];
-	$client = new \Solarium\Client($solarium_config);
+$client = new \Solarium\Client($solarium_config);
 
 	$p = 1;
 	$start = time();
@@ -64,7 +57,7 @@ foreach( $srs as $srow )
 	FROM `session` s, `file` f
 	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 	WHERE f.sessionid = s.sessionid
-	  AND s.sessionid = {$srow['sessionid']}
+		AND ({$sessSQL})
 	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)";
 	echo "{$sql}\n";
 
@@ -72,18 +65,18 @@ foreach( $srs as $srow )
 
 	$recs = 0;
 
-	$sql = "
-	SELECT b.name AS bestandname, f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
-	FROM bestand b, `session` s, `file` f
-	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
-	WHERE f.sessionid = s.sessionid
-	AND s.bestandid = b.bestandid
-	AND s.sessionid = {$srow['sessionid']}
-	AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)
-	LIMIT 0, {$pagesize}";
-
 	do {
 		$solrtime = time();
+		$sql = "
+		SELECT b.name AS bestandname, s.sessionid AS sessionid, f.fileid AS fileid, f.*, ilm.mimetype, ilm.mimeencoding, ilm.description, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
+		FROM bestand b, `session` s, `file` f
+		LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
+		WHERE f.sessionid = s.sessionid
+		AND ({$sessSQL})
+		AND s.bestandid = b.bestandid
+		AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)
+		LIMIT 0, {$pagesize}";
+
 		$rs = $db->Execute( $sql );
 		echo "{$sql}\n";
 		$recs = 0;
@@ -99,8 +92,12 @@ foreach( $srs as $srow )
 
 			$bestandid = intval( $row['bestandid'] );
 			$sessionid = intval( $row['sessionid'] );
-		   $fileid = intval( $row['fileid'] );
-		   if( !$fileid || !$sessionid ) continue;
+		  $fileid = intval( $row['fileid'] );
+		   if( !$fileid || !$sessionid ) {
+				 echo "{$row['bestandid']}.{$row['sessionid']}.{$row['fileid']}\n";
+				 print_r( $row );
+				 continue;
+			 };
 
 		   if( $p % 1000 == 0 ) gc_collect_cycles();
 			$now = time();
@@ -109,7 +106,7 @@ foreach( $srs as $srow )
 			$ges = round(100*$elapsed/$percent);
 			$rest = $ges - $elapsed;
 			$percent = round( $percent );
-			echo "{$p}/{$num} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} ============\n";
+			echo "{$p}/{$num} - {$bestandid}.{$sessionid}.{$fileid} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)."\n";
 			$p++;
 
 			try {
@@ -117,6 +114,9 @@ foreach( $srs as $srow )
 				$sql = "UPDATE file SET solrtime=FROM_UNIXTIME({$solrtime}) WHERE sessionid={$sessionid} AND fileid={$fileid}";
 				//echo "{$sql}\n";
 				$db->Execute( $sql );
+			}
+			catch( \Solarium\Exception\HttpException $e ) {
+				echo "addDocument failed: ".$e->getMessage();
 			}
 			catch( \Exception $e ) {
 				echo "addDocument failed: ".$e->getMessage();
@@ -130,7 +130,7 @@ foreach( $srs as $srow )
 			} // if( $p % 1000 == 0 )
 		} // foreach( $data as $row )
 
-		echo "recs: {$recs}\n";
+		echo "recs: {$recs} == {$pagesize}\n";
 	} while( $recs == $pagesize );
 
 	echo "> commit...\n";
@@ -138,10 +138,9 @@ foreach( $srs as $srow )
 	$update->addCommit();
 	$result = $client->update($update);
 	//$client->commit();
-	$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$start}) WHERE sessionid={$srow['sessionid']}";
-	echo "{$sql}\n";
-	$db->Execute($sql);
-} // foreach( $srs as $srow )
-$srs->Close();
+	//$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$start}) WHERE sessionid={$srow['sessionid']}";
+	//echo "{$sql}\n";
+	//$db->Execute($sql);
+
 
 ?>
