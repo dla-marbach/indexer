@@ -65,31 +65,36 @@ foreach( $srs as $srow )
 	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 	WHERE f.sessionid = s.sessionid
 	  AND s.sessionid = {$srow['sessionid']}
-	  AND f.mtime > ".$db->qstr( $srow['solrtime'] );
+	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)";
 	echo "{$sql}\n";
 
 	$num = intval( $db->GetOne( $sql ));
-	$pages = ceil( $num/$pagesize );
 
+	$recs = 0;
 
+	$sql = "
+	SELECT b.name AS bestandname, f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
+	FROM bestand b, `session` s, `file` f
+	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
+	WHERE f.sessionid = s.sessionid
+	AND s.bestandid = b.bestandid
+	AND s.sessionid = {$srow['sessionid']}
+	AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)
+	LIMIT 0, {$pagesize}";
 
-	for( $page = 0; $page < $pages; $page++ )
-	{
-		$startrec = $page*$pagesize;
-
-		$sql = "
-		SELECT b.name AS bestandname, f.*, ilm.*, s.bestandid, s.basepath, s.name AS sessionname, s.localpath, s.group
-		FROM bestand b, `session` s, `file` f
-		LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
-		WHERE f.sessionid = s.sessionid
-		AND s.bestandid = b.bestandid
-		AND s.sessionid = {$srow['sessionid']}
-		AND f.mtime > ".$db->qstr( $srow['solrtime'] )."
-		LIMIT {$startrec}, {$pagesize}";
+	do {
+		$solrtime = time();
 		$rs = $db->Execute( $sql );
 		echo "{$sql}\n";
+		$recs = 0;
+		$data = array();
+		foreach( $rs as $row ) {
+			$data[] = $row;
+			$recs++;
+		} // foreach( $rs as $row )
+		$rs->Close();
 
-		foreach( $rs as $row )
+		foreach( $data as $row )
 		{
 
 			$bestandid = intval( $row['bestandid'] );
@@ -107,17 +112,27 @@ foreach( $srs as $srow )
 			echo "{$p}/{$num} ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} ============\n";
 			$p++;
 
-			addDocument( $db, $row, $client, $config, true );
-
-			if( $p % 1000 == 0 ) {
+			try {
+				addDocument( $db, $row, $client, $config, true );
+				$sql = "UPDATE file SET solrtime=FROM_UNIXTIME({$solrtime}) WHERE sessionid={$sessionid} AND fileid={$fileid}";
+				//echo "{$sql}\n";
+				$db->Execute( $sql );
+			}
+			catch( \Exception $e ) {
+				echo "addDocument failed: ".$e->getMessage();
+			}
+			if( $p % 1000 == 0 )
+			{
 				echo "> commit...\n";
 				$update = $client->createUpdate();
 				$update->addCommit();
 				$result = $client->update($update);
-			}
-		}
-		$rs->Close();
-	}
+			} // if( $p % 1000 == 0 )
+		} // foreach( $data as $row )
+
+		echo "recs: {$recs}\n";
+	} while( $recs == $pagesize );
+
 	echo "> commit...\n";
 	$update = $client->createUpdate();
 	$update->addCommit();
@@ -126,7 +141,7 @@ foreach( $srs as $srow )
 	$sql = "UPDATE session SET solrtime=FROM_UNIXTIME({$start}) WHERE sessionid={$srow['sessionid']}";
 	echo "{$sql}\n";
 	$db->Execute($sql);
-}
+} // foreach( $srs as $srow )
 $srs->Close();
 
 ?>

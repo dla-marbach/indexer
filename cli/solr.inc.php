@@ -164,7 +164,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('file.extension', pathinfo( $row['name'], PATHINFO_EXTENSION ));
    $doc->addField('file.filetype', $row['filetype']);
    if( strlen( $row['sha256'] )) $doc->addField('file.sha256', $row['sha256']);
-   $doc->addField('file.filesize', $row['filesize']);
+   $doc->addField('file.filesize', intval($row['filesize']));
    $datetime = new DateTime( $row['filectime'] );
    $doc->addField('file.filectime', $datetime->format( "Y-m-d\TH:i:s" ).'Z');
    $datetime = new DateTime( $row['filemtime'] );
