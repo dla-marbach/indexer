@@ -13,6 +13,7 @@ if( $isAdmin || $isEditor ) {
 
 $resultFields = array(
 	'id',
+	'mimetype',
 	'status.locked',
 	'status.status',
 	'bestand.id',
