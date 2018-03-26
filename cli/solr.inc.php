@@ -109,6 +109,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 
    $lock = $row['lock'];
    $status = $row['status'];
+	 $mimetype = array();
    $aclmeta = array();
    $aclpreview = array();
    $aclcontent = array();
@@ -182,7 +183,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 //   $doc->addField('status.locked', $row['lock']);
 
 
-	 $doc->addField('mimetype', $row['mimetype']);
+	 if( !in_array( $row2['mimetype'], $mimetype )) $mimetype[] = $row['mimetype'];
 	 $doc->addField('libmagic.mimetype', $row['mimetype']);
    $doc->addField('libmagic.mimeencoding', $row['mimeencoding']);
    $doc->addField('libmagic.description', $row['description']);
@@ -191,7 +192,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
-		 if( $row2['mimetype'] ) $doc->addField('mimetype', $row2['mimetype']);
+		 if( $row2['mimetype'] ) if( !in_array( $row2['mimetype'], $mimetype )) $mimetype[] = $row2['mimetype'];
 		 if( $row2['mimetype'] ) $doc->addField('gvfs_info.mimetype', $row2['mimetype']);
 		if( $row2['fullinfo'] ) $doc->addField('gvfs_info.fullinfo', $row2['fullinfo']);
    }
@@ -200,7 +201,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
-		 if( $row2['mimetype'] ) $doc->addField('mimetype', $row2['mimetype']);
+		 if( $row2['mimetype'] ) if( !in_array( $row2['mimetype'], $mimetype )) $mimetype[] = $row2['mimetype'];
 		 if( $row2['mimetype'] ) $doc->addField('tika.mimetype', $row2['mimetype']);
 		if( $row2['mimeencoding'] ) $doc->addField('tika.mimeencoding', $row2['mimeencoding']);
 		if( $row2['fullinfo'] ) $doc->addField('tika.fullinfo', iconv("UTF-8", "UTF-8//IGNORE", $row2['fullinfo']));
@@ -328,6 +329,10 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 	$suggest = iconv("UTF-8", "UTF-8//IGNORE", trim( $suggest));
 	$doc->addField('suggest', $suggest );
 	$doc->addField('shorttext', @iconv("UTF-8", "UTF-8//IGNORE", substr( $suggest, 0, 1024 )));
+	}
+
+	if( count( $mimetype )) {
+		foreach( $mimetype as $m ) $doc->addField( 'mimetype', $m );
 	}
 
    try {
