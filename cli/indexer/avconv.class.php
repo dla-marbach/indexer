@@ -71,6 +71,9 @@ class AVConv extends Plugin
 			if( file_exists( $thumb.'.png' )) unlink( $thumb.'.png' );
 		}
 
+		$enc = mb_detect_encoding($info, "UTF-8,ISO-8859-1");
+		$info = iconv($enc, "UTF-8", $info);
+
 		$sql = "INSERT INTO info_avconv ( sessionid, fileid, fullinfo, status )
 				VALUES( {$this->sessionid}
 					, {$this->fileid}
