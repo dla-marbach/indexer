@@ -183,7 +183,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 //   $doc->addField('status.locked', $row['lock']);
 
 
-	 if( !in_array( $row2['mimetype'], $mimetype )) $mimetype[] = $row['mimetype'];
+	 if( !in_array( $row['mimetype'], $mimetype )) $mimetype[] = $row['mimetype'];
 	 $doc->addField('libmagic.mimetype', $row['mimetype']);
    $doc->addField('libmagic.mimeencoding', $row['mimeencoding']);
    $doc->addField('libmagic.description', $row['description']);
