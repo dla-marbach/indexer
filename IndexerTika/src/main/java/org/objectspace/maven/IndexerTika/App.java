@@ -72,15 +72,18 @@ public class App
 
 		    	AutoDetectParser parser = new AutoDetectParser();
 		        //BodyContentHandler handler = new BodyContentHandler(20*1024*1024);
-		        Metadata metadata = new Metadata();		    	
 		    	
 		    	Statement stmtFiles = null;
 		    	PreparedStatement insertStmt = null;
+		    	PreparedStatement updateStmt = null;
 		    	ResultSet rs = null;
 		    	try {
 		    		String insertSQL = "INSERT INTO info_tika(sessionid, fileid, mimetype, mimeencoding, fullinfo, hascontent, status) "
 		    				+ "VALUES( ?, ?, ?, ?, ?, ?, ?)";
 		    		insertStmt = conn.prepareStatement(insertSQL);
+
+		    		String updateSQL = "UPDATE `file` SET mtime=NOW() WHERE sessionid=? AND fileid=?";
+		    		updateStmt = conn.prepareStatement(updateSQL);
 		    		
 			    	stmtFiles = conn.createStatement();
 			    	
@@ -105,7 +108,8 @@ public class App
 				    		Integer fileid = f.fileid;
 				    		System.out.println(filename);
 				    		File initialFile = new File(filename);
-				    		if( ! initialFile.exists()) { continue; } 
+				    		if( ! initialFile.exists()) { continue; }
+					        Metadata metadata = new Metadata();		    	
 				            try (InputStream stream = TikaInputStream.get(initialFile.toPath(), metadata )) { // new FileInputStream(initialFile)) {
 				            	try {
 					                Path zipname = Paths.get( filename+".tika.txt.gz" );
@@ -156,6 +160,10 @@ public class App
 					                insertStmt.setString( 7,  "ok" );
 					                insertStmt.executeUpdate();
 					                
+					                updateStmt.setInt(1,  sessionid );
+					                updateStmt.setInt(2,  fileid );
+					                updateStmt.executeUpdate();
+					                
 					                if( contentSize < 5 ) {
 					                	System.out.println( "deleting "+zipname.toString());
 					                	Files.delete(zipname);
@@ -179,6 +187,9 @@ public class App
 					                insertStmt.setNull(6, Types.INTEGER);
 					                insertStmt.setString( 7,  "error" );
 					                insertStmt.executeUpdate();
+					                updateStmt.setInt(1,  sessionid );
+					                updateStmt.setInt(2,  fileid );
+					                updateStmt.executeUpdate();
 	
 				            	}
 	//			                return handler.toString();

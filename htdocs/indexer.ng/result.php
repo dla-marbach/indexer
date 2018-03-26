@@ -15,6 +15,8 @@ $resultFields = array(
 	'id',
 	'status.locked',
 	'status.status',
+	'bestand.id',
+	'bestand.name',
 	'session.id',
 	'session.name',
 	'session.basepath',
