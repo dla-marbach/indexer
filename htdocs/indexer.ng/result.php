@@ -34,6 +34,7 @@ $resultFields = array(
 	'file.filetype',
 	'file.stat',
 	'file.sha256',
+	'file.archivetime',
 	'gvfs_info.mimetype',
 	'gvfs_info.fullinfo',
 	'libmagic.mimetype',
@@ -310,6 +311,15 @@ if( $hasError )
 
 				<!-- unique identifier -->
 				<span style="color:#000000;" class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'checksum:<?php echo htmlspecialchars( $doc['file.sha256'] ); ?>' );">#<?php echo $doc['id']; ?></a></span>
+
+				<!-- file.archivetime -->
+				<?php
+					$date = new \DateTime( $doc['file.archivetime'] );
+				?>
+				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'itime:<?php echo $date->format( "Y-m-d"  ); ?>' );">
+				<?php echo $doc['file.archivetime']; ?>
+				</a></span>
+
 
 				<!-- download -->
 				<?php if( $hasFile && $status != 'yellow' && $status != 'red' ) { ?><a href="raw.php?file=<?php echo urlencode( $localfile ); ?>&mime=<?php echo urlencode( $mimetype ); ?>&name=<?php echo urlencode( $doc['file.name'] ); ?>" target="_new">

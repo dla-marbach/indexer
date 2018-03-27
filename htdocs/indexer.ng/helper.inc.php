@@ -56,19 +56,19 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 	{
 	   foreach( $q as $name=>$value )
 	   {
-	     $value = str_replace( '##bs##', "\\", 
-					str_replace( '##plus##', '+', 
-						str_replace( '+', ' ', 
-							str_replace( "\\+", '##plus##', 
+	     $value = str_replace( '##bs##', "\\",
+					str_replace( '##plus##', '+',
+						str_replace( '+', ' ',
+							str_replace( "\\+", '##plus##',
 								str_replace( "\\\\", "##bs##", trim( $value ))))));
-		 if( !array_key_exists( $name, $qArr )) 
+		 if( !array_key_exists( $name, $qArr ))
 		 {
 			$qArr[$name] = array();
 		 }
 		 if( strlen( $value )) $qArr[$name][] = $value;
 	   }
 	}
-	
+
 	$solrQuery = '';
 	foreach( $qArr as $name=>$values )
 	{
@@ -132,6 +132,10 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		      $field = 'file.file'.$name;
 			  $andor = ' OR ';
 			  break;
+			case 'itime':
+		      $field = 'file.archivetime';
+ 			  $andor = ' AND ';
+ 			  break;
 		   case 'text':
 		      $field = 'suggest';
 			  $andor = ' AND ';
@@ -152,12 +156,12 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 	   foreach( $values as $value )
 	   {
 	      if( !strlen( $value )) continue;
-		  
+
 		  $value = trim( $value );
-		  
+
 	      if( !strlen( $or )) $or = '(';
 		  else $or .= $andor;
-		  
+
 		  switch( $name )
 		  {
 			case 'id':
@@ -166,7 +170,7 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 				$or .= "{$field}:".$v;
 			   break;
 			case 'path':
-				if( $value == '/' ) 
+				if( $value == '/' )
 				{
 					$value =  '\/';
 				}
@@ -194,6 +198,7 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 			case 'mtime':
 			case 'ctime':
 			case 'atime':
+			case 'itime':
 				if( preg_match( "/([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2})\/([0-9]{4}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2})/", $value, $matches ))
 				{
 					$from = new DateTime( $matches[1] );
@@ -251,10 +256,10 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 				$v = $helper ? $helper->escapePhrase( $value ) : str_replace( ' ', "\\ ", $value );
 				$or .= "{$field}:".$v;
 		  }
-		  
-		  
+
+
 	   }
-	   if( strlen( $or )) 
+	   if( strlen( $or ))
 	   {
 		   $or .= ')';
 		   if( strlen( $solrQuery )) $solrQuery .= ' AND ';
