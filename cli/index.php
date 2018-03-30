@@ -144,7 +144,7 @@ $recs = 0;
 				$ges = $percent == 0 ? 0 : round(100*$elapsed/$percent);
 				$rest = $ges - $elapsed;
 				$percent = round( $percent );
-				echo "{$p}/{$num} [{$p1}] ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid} =========\n";
+				echo "{$p}/{$num} [{$p1}] ({$percent}%) elapsed: ".sprintf('%02d:%02d:%02d', ($elapsed/3600),($elapsed/60%60), $elapsed%60).", rest: ".sprintf('%02d:%02d:%02d', ($rest/3600),($rest/60%60), $rest%60)." {$sessionid}:{$fileid}\n";
 				$p++;
 
 
