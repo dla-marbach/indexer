@@ -147,14 +147,18 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		 $doc->addField( 'acl_data', $acl );
 	 }
 
+	 // Bestand
 	 $doc->addField('bestand.id', $bestandid);
    $doc->addField('bestand.name', $row['bestandname']);
+
+	 // Session
 	 $doc->addField('session.id', $sessionid);
    $doc->addField('session.name', $row['sessionname']);
    $doc->addField('session.basepath', $row['basepath']);
    $doc->addField('session.localpath', $row['localpath']);
    $doc->addField('session.group', $row['group']);
 
+	 // File
    $doc->addField('file.id', $fileid);
    $doc->addField('file.parentid', $row['parentid']);
    $doc->addField('file.localcopy', $row['localcopy']);
@@ -183,11 +187,13 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 //   $doc->addField('status.locked', $row['lock']);
 
 
+	 // libmagic
 	 if( !in_array( $row['mimetype'], $mimetype )) $mimetype[] = $row['mimetype'];
 	 $doc->addField('libmagic.mimetype', $row['mimetype']);
    $doc->addField('libmagic.mimeencoding', $row['mimeencoding']);
    $doc->addField('libmagic.description', $row['description']);
 
+	 // gvfs_info
    $sql = "SELECT * FROM info_gvfs_info WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -197,6 +203,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		if( $row2['fullinfo'] ) $doc->addField('gvfs_info.fullinfo', $row2['fullinfo']);
    }
 
+	 // tika
    $sql = "SELECT * FROM info_tika WHERE sessionid={$sessionid} AND fileid={$fileid}";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -240,6 +247,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 */
    if( !$suggest )
    {
+		 // antiword
 	   $sql = "SELECT * FROM info_antiword WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
 	   $row2 = $db->getRow( $sql );
 	   if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -272,6 +280,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    }
 */
 
+	 // imagick
    $sql = "SELECT * FROM info_imagick WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
@@ -287,19 +296,35 @@ function addDocument( $db, $row, $client, $config, $echo = true )
 		//if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
    }
 
+	 // avconv / ffmpeg
    $sql = "SELECT * FROM info_avconv WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
    {
-		if( $row2['fullinfo'] ) $doc->addField('avconv.fullinfo', $row2['fullinfo']);
-		$fname = "{$row['localpath']}/{$row['localcopy']}".'.avconv.thumb.png';
-		if( file_exists( $fname ))
-		{
-			$thumb = base64_encode( file_get_contents( $fname ));
-		}
+			if( $row2['fullinfo'] ) $doc->addField('avconv.fullinfo', $row2['fullinfo']);
+			$fname = "{$row['localpath']}/{$row['localcopy']}".'.avconv.thumb.png';
+			if( file_exists( $fname ))
+			{
+				$thumb = base64_encode( file_get_contents( $fname ));
+			}
 //		if( strlen( $row2['thumb'] )) $thumb = base64_encode( $row2['thumb'] );
    }
 
+	 // siegfried
+   $sql = "SELECT * FROM info_siegfried WHERE sessionid={$sessionid} AND fileid={$fileid} AND status='ok'";
+   $row2 = $db->getRow( $sql );
+   if( $row2 && is_array( $row2 ) && count( $row2 ))
+   {
+		 if( $row2['id'] ) $doc->addField('siegfried.id', "{$row2['ns']}:{$row2['id']}");
+		 if( $row2['format'] ) $doc->addField('siegfried.format', $row2['format'] );
+		 if( $row2['mimetype'] ) {
+			 $doc->addField('siegfried.mime', $row2['mimetype'] );
+			 if( !in_array( $row2['mimetype'], $mimetype )) $mimetype[] = $row2['mimetype'];
+		 }
+		 $doc->addField('siegfried.gzdata', base64_encode( gzencode($row2['data'])) );
+   }
+
+	 // nsrl
    $sql = "SELECT info.ProductCode, np.ProductName, np.ProductVersion, np.ApplicationType, np.Language, nm.MfgName, no.OpSystemName, no.OpSystemVersion, nm2.MfgName AS OpMfgName FROM info_nsrl info, NSRLProd np, NSRLOS no, NSRLMfg nm, NSRLMfg nm2 WHERE info.ProductCode=np.ProductCode AND np.OpSystemCode=no.OpSystemCode AND np.MfgCode=nm.MfgCode AND no.MfgCode=nm2.MfgCode AND sessionid={$sessionid} AND fileid={$fileid} AND info.ProductCode IS NOT NULL";
    $row2 = $db->getRow( $sql );
    if( $row2 && is_array( $row2 ) && count( $row2 ))
