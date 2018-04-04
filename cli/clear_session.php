@@ -58,7 +58,9 @@ $tables = array(
   , 'info_imagick'
   , 'info_libmagic'
   , 'info_nsrl'
-  , 'info_tika'
+	, 'info_tika'
+	, 'info_siegfried'
+	, 'indexlog'
 );
 
 foreach( $tables as $table ) {

@@ -40,6 +40,9 @@ $resultFields = array(
 	'libmagic.mimetype',
 	'libmagic.mimeencoding',
 	'libmagic.description',
+	'siegfried.id',
+	'siegfried.format',
+	'siegfried.gzdata',
 	'tika.fullinfo',
 	'imagick.fullinfo',
 	'avconv.fullinfo',
@@ -218,6 +221,7 @@ if( $hasError )
 		$hasIMAGICK = strlen( @trim( $doc['imagick.fullinfo'] )) > 0;
 		$hasAVCONV = strlen( @trim( $doc['avconv.fullinfo'] )) > 0;
 		$hasGVFS = strlen( @trim( $doc['gvfs_info.fullinfo'] )) > 0;
+		$hasSiegfried = count( $doc['siegfried.id'] ) > 0;
 		$hasNSRL = $doc['nsrl.found'] == true ;
 		$hasThumb = strlen( @trim( $doc['thumb'] )) > 0;
 		$localfile = $doc['session.localpath'].'/'.$doc['file.localcopy'];
@@ -387,6 +391,25 @@ if( $hasError )
 				<span class="label label-default"><a style="color:#000000;" href="javascript:newquery( 'mtime:<?php echo $date->format( "Y-m-d"  ); ?>' );">
 				<?php echo $doc['file.filemtime']; ?>
 				</a></span>
+				&nbsp;
+				<!-- Siegfried -->
+				<?php
+					if( $hasSiegfried ) {
+						$siegfried_id = $doc['siegfried.id'][0];
+						$siegfried_format = $doc['siegfried.format'];
+				?>
+				<span class="label label-default">
+					<a style="color:#000000;" href="javascript:newquery( 'pronom:<?php echo substr( $siegfried_id, strlen( 'pronom:')); ?>' );">
+						<?php echo substr( $siegfried_id, strlen( 'pronom:')); ?>
+					</a>
+			 </span>
+			 &nbsp;
+			 <span class="label label-default">
+				 <a style="color:#000000;" href="javascript:newquery( 'format:<?php echo str_replace( ' ', '+', htmlspecialchars( $siegfried_format )); ?>' );">
+					 <?php echo htmlspecialchars( $siegfried_format ); ?>
+				 </a>
+			</span>
+			<?php } ?>
 
 				<!-- file.path -->
 				<div style="padding-left: 24px;">
@@ -421,6 +444,7 @@ if( $hasError )
 						<?php if( $hasIMAGICK ) { ?><li><a href="#imagick<?php echo $num; ?>">imagick</a></li><?php } ?>
 						<?php if( $hasAVCONV ) { ?><li><a href="#avconv<?php echo $num; ?>">avconv</a></li><?php } ?>
 						<?php if( $hasNSRL ) { ?><li><a href="#nsrl<?php echo $num; ?>">nsrl</a></li><?php } ?>
+						<?php if( $hasSiegfried ) { ?><li><a href="#siegfried<?php echo $num; ?>">siegfried</a></li><?php } ?>
 						<li><a href="#cite<?php echo $num; ?>">cite this item</a></li>
 					</ul>
 					<div class="tab-content">
@@ -459,6 +483,18 @@ if( $hasError )
 <b>OpSystemName: </b><?php echo htmlspecialchars( $doc['nsrl.OpSystemName'] ); ?><br />
 <b>OpSystemVersion: </b><?php echo htmlspecialchars( $doc['nsrl.OpSystemVersion'] ); ?><br />
 <b>OpMfgName: </b><?php echo htmlspecialchars( $doc['nsrl.OpMfgName'] ); ?></pre></div>
+						<?php } ?>
+						<?php if( $hasSiegfried ) {
+							$fullsiegfried = json_decode(gzdecode( base64_decode( $doc['siegfried.gzdata'])), true );
+							?>
+						<div class="tab-pane" id="siegfried<?php echo $num; ?>"><pre style="border: none;">
+<?php
+							if( isset( $fullsiegfried['files'][0]['matches'][0] ))
+								foreach( $fullsiegfried['files'][0]['matches'][0] as $key=>$val ) {
+										echo str_pad($key.':', 10).htmlspecialchars( $val )."<br />";
+								}
+?>
+						</pre></div>
 						<?php } ?>
 						<div class="tab-pane" id="cite<?php echo $num; ?>"><pre>#<?php echo $doc['id']; ?>, <?php echo $mimetype; ?> (<?php echo $doc['file.filemtime']; ?>). <?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $filename ))); ?>, in: <i><?php echo htmlspecialchars( $doc['bestand.name'] ); ?></i>. <?php echo $doc['session.name']; ?>:/<?php echo htmlspecialchars( $path ); ?> [<?php echo implode( '/', $doc['session.group'] ); ?>, <?php echo _format_bytes( $size ); ?>].</pre></div>
 <script>

@@ -106,10 +106,19 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		      $field = 'nsrl.ApplicationType';
 			  $andor = ' OR ';
 			  break;
-		   case 'type':
-		      $field = 'file.filetype';
-			  $andor = ' OR ';
-			  break;
+				case 'type':
+ 		      $field = 'file.filetype';
+ 			  $andor = ' OR ';
+ 			  break;
+				case 'pronom':
+			      $field = 'siegfried.id';
+						$values = array_map( function ( $var ) { return 'pronom:'.$var; }, $values );
+				  $andor = ' OR ';
+				  break;
+				case 'format':
+			      $field = 'siegfried.format';
+				  $andor = ' OR ';
+				  break;
 		   case 'session':
 		      $field = 'session.id';
 			  $andor = ' OR ';

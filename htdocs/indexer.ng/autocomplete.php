@@ -10,6 +10,8 @@ $facets = array(
 	'name'		=>'file.name',
 	'nsrl'		=>'nsrl.found',
 	'nsrl_apptype'=>'nsrl.ApplicationType',
+	'pronom' => 'siegfried.id',
+	'format' => 'siegfried.format',
 	'ext'		=>'file.extension',
 	'status'	=>'status.status',
 	'locked'	=>'status.locked',
@@ -92,6 +94,7 @@ else
 	foreach( $fresult AS $value => $count)
 	{
 		if( !intval( $count )) continue;
+		$value = preg_replace( array( '/pronom:/'), array(''), $value );
 		$return[] = array( 'value'=>str_replace( ' ', '+', $value), 'label'=>"{$value} ({$count})" );
 	}
 	echo json_encode( $return );

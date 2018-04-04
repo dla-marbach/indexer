@@ -161,7 +161,7 @@ else {
           unquotable : [
             'group',
             'mime',
-			'type',
+			      'type',
             'text',
             'ext',
             'name',
@@ -177,6 +177,8 @@ else {
       'itime',
 			'nsrl',
 			'nsrl_apptype',
+      'pronom',
+      'format',
 			'locked',
 			'status',
 			'unknown',
@@ -213,6 +215,8 @@ else {
 			  case 'path':
 			  case 'nsrl':
 			  case 'nsrl_apptype':
+        case 'pronom':
+        case 'format':
 			  case 'locked':
 			  case 'status':
 				 facets = window.visualSearch.searchQuery.facets();
@@ -246,6 +250,8 @@ else {
         'itime',
 				'nsrl',
 				'nsrl_apptype',
+        'pronom',
+        'format',
 				'locked',
 				'status'
 //                { label: 'city',    category: 'location' },
