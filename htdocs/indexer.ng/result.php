@@ -395,7 +395,7 @@ if( $hasError )
 				<!-- Siegfried -->
 				<?php
 					if( $hasSiegfried ) {
-						$siegfried_id = $doc['siegfried.id'][0];
+						$siegfried_id = is_array($doc['siegfried.id']) ? $doc['siegfried.id'][0] : $doc['siegfried.id'];
 						$siegfried_format = $doc['siegfried.format'];
 				?>
 				<span class="label label-default">
