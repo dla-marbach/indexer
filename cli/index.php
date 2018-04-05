@@ -99,7 +99,7 @@ foreach( $pluginClass::joins() as $short=>$dbname )
 $sql .= "
 WHERE f.sessionid = s.sessionid AND {$sessSQL} AND ".$pluginClass::where();
 
-	$num = intval( $db->GetOne( $sql ));
+$num = intval( $db->GetOne( $sql ));
 $pages = ceil( $num/$pagesize );
 $p = $startpage * $pagesize;
 
