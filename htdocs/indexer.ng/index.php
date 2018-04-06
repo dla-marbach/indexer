@@ -72,7 +72,7 @@ else {
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li><a href="#about">About</a></li>
+            <li><a href="javascript:cloneWindow();">Clone Window</a></li>
           </ul>
           <form style="width: 700px;" class="navbar-form navbar-right">
 			<div id="search_box_container"></div>
@@ -83,6 +83,17 @@ else {
   <div class="container">
 	<!-- <div id="search_query">&nbsp;</div> -->
     <script type="text/javascript" charset="utf-8">
+
+    function cloneWindow() {
+    var win = window.open(window.location.href, '_blank');
+    if (win) {
+        //Browser has allowed it to be opened
+        win.focus();
+    } else {
+        //Browser has blocked it
+        alert('Please allow popups for this website');
+    }
+    }
 	function setKeywords(signature)
 	{
 
@@ -110,7 +121,7 @@ else {
 		 query = window.visualSearch.searchQuery.serialize();
 		 query_plain = $("#query_plain").val();
 		 do_plain = $("#do_plain").val();
-		 window.location.hash = '#'+encodeURIComponent( query );
+		 window.location.hash = '#'+encodeURIComponent( query )+'$$'+page;
 		 $.ajax({
 				  type: "POST",
 				  url: "result.php",
@@ -150,8 +161,33 @@ else {
 					});
 	}
 
+  function updateInventar( id, txt )
+	{
+
+    var inventar = prompt( "Inventarnummer", txt );
+
+    if( inventar !== null && inventar !== undefined ) {
+  		$("body").css( 'cursor', 'wait' );
+  		$.ajax({
+  					  type: "POST",
+  					  url: "setinventar.php",
+  					  data: { id: id, inventar: inventar },
+  					  dataType: "html"
+  					}).done(function( msg ) {
+  					  var $content = $('#inventory'+id.replace( '.', '' ).replace( '.', '' ));
+  					  $content.html( msg );
+  					  $("body").css( 'cursor', 'default' );
+  					  //$("#overlay").hide();
+  					});
+    }
+	}
+
       $(document).ready(function() {
-		query = decodeURIComponent( window.location.hash.slice(1));
+    		h = decodeURIComponent( window.location.hash.slice(1));
+        hs = h.split( '$$');
+        query = hs[0];
+        page = parseInt(hs[1]);
+        if( isNaN( page )) page = 1;
         window.visualSearch = VS.init({
           container  : $('#search_box_container'),
           // query      : 'text: test',
@@ -167,7 +203,8 @@ else {
             'name',
 			'session',
 			'id',
-			'checksum',
+      'checksum',
+      'inventory',
 			'path',
 			'tikainfo',
 			'size',
@@ -218,7 +255,8 @@ else {
         case 'pronom':
         case 'format':
 			  case 'locked':
-			  case 'status':
+        case 'status':
+        case 'inventory':
 				 facets = window.visualSearch.searchQuery.facets();
 			     $.ajax({
 					  type: "POST",
@@ -252,7 +290,8 @@ else {
 				'nsrl_apptype',
         'pronom',
         'format',
-				'locked',
+        'locked',
+        'inventory',
 				'status'
 //                { label: 'city',    category: 'location' },
               ]);
@@ -260,7 +299,7 @@ else {
           }
         });
 		$("#do_plain").val( 0 );
-		execSearch( 1 );
+		execSearch( page );
       });
 
 

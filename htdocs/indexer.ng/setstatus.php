@@ -22,7 +22,7 @@ $user = array_key_exists( 'REMOTE_USER', $_SERVER ) ? $_SERVER['REMOTE_USER'] : 
 $isAdmin = inGroup( 'admin', $user );
 $isEditor = inGroup( 'editor', $user );
 
-$isAdmin = true;
+//$isAdmin = true;
 
 $ok = false;
 

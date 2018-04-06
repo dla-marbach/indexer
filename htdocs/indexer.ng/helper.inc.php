@@ -86,8 +86,12 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		      $field = 'file.path';
 			  $andor = ' AND ';
 			  break;
-		   case 'ext':
+			case 'ext':
 		      $field = 'file.extension';
+			  $andor = ' OR ';
+			  break;
+			case 'inventory':
+		      $field = 'file.inventory';
 			  $andor = ' OR ';
 			  break;
 		   case 'name':

@@ -83,6 +83,7 @@ function updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $newdata,
 	error_log( $rb->getRawData( $update ));
 
 	$result = $client->update($update);
+	error_log( 	'Query status: ' . $result->getStatus()."\n".'Query time: ' . $result->getQueryTime());
 
 
 	//echo '<b>Update query executed</b><br/>';
@@ -181,7 +182,8 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $datetime = new DateTime( $row['archivetime'] );
    $doc->addField('file.archivetime', $datetime->format( "Y-m-d\TH:i:s" ).'Z');
    $doc->addField('file.access', $row['access']);
-   $doc->addField('file.relevance', $row['relevance']);
+	 $doc->addField('file.relevance', $row['relevance']);
+	 $doc->addField('file.inventory', $row['inventory']);
 
 //   $doc->addField('status.status', $row['status']);
 //   $doc->addField('status.locked', $row['lock']);

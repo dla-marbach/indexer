@@ -35,6 +35,7 @@ $resultFields = array(
 	'file.stat',
 	'file.sha256',
 	'file.archivetime',
+	'file.inventory',
 	'gvfs_info.mimetype',
 	'gvfs_info.fullinfo',
 	'libmagic.mimetype',
@@ -159,6 +160,8 @@ if( $hasError )
 		->setRows( $limit )
 		->setFields( $resultFields );
 	try {
+		//$rb = $select->getRequestBuilder();
+		//$qqq = $rb->getRawData( $select );
 		$resultset = $solarium->select( $select );
 	}
 	catch( \Solarium\Exception\HttpException $e )
@@ -190,14 +193,7 @@ if( $hasError )
 	include( 'paging.inc.php' );
 	?>
 	<div id="accordion" class="panel-group">
-	<!-- style>
-	em { background-color: white; font-weight: bold; }
 
-	.nav-tabs > li > a {
-	  border-color: #eeeeee #eeeeee #dddddd;
-	  background-color: #c0c0c0;
-	}
-	</style -->
 	<?php
 	$num = 0;
 	foreach( $resultset as $document )
@@ -228,6 +224,15 @@ if( $hasError )
 		$hasFile = is_file( $localfile );
 		$locked = $doc['status.locked'];
 		$status = $doc['status.status'];
+		$inventory = isset( $doc['file.inventory'] ) ? $doc['file.inventory'] : 'none';
+		if( strlen( trim( $inventory )) == 0 ) $inventory = 'none';
+		?>
+		<!--
+		<?php echo htmlspecialchars(print_r( $document, true )); ?>
+		-->
+		<?php
+		?>
+		<?php
 
 		if( !$fileid )
 		{
@@ -365,6 +370,27 @@ if( $hasError )
 					<img width="24px" src="icons/ampel/green<?php echo $status == 'green' ? '' : '_disabled'; ?>.png">
 					<img width="24px" src="icons/ampel/unknown<?php echo $status == 'unknown' ? '' : '_disabled'; ?>.png">
 				<?php } ?>
+				</div>
+				<div style="display: inline-block;" id="inventory<?php echo str_replace( '.', '', $id ); ?>">
+					<?php
+					if( $isAdmin || $isEditor ) {
+						?>
+						<span class="label label-default">
+							<a style="color:#000000;" href="javascript:updateInventar( '<?php echo $id; ?>', '<?php echo $inventory == 'none' ? '' : $inventory; ?>' );">
+								#<?php echo $inventory; ?>
+							</a>
+						</span>
+						<?php
+					}
+					else {
+						?>
+						<span class="label label-default">
+								#<?php echo $inventory; ?>
+						</span>
+						<?php
+
+					}
+					?>
 				</div>
 				<br />
 

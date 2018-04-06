@@ -8,6 +8,7 @@ $facets = array(
 	'session'	=>'session.id',
 	'type'		=>'file.filetype',
 	'name'		=>'file.name',
+	'inventory'		=>'file.inventory',
 	'nsrl'		=>'nsrl.found',
 	'nsrl_apptype'=>'nsrl.ApplicationType',
 	'pronom' => 'siegfried.id',
