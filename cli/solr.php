@@ -58,7 +58,7 @@ $client = new \Solarium\Client($solarium_config);
 	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 	WHERE f.sessionid = s.sessionid
 		AND ({$sessSQL})
-	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)";
+	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL OR f.mtime IS NULL)";
 	echo "{$sql}\n";
 
 	$num = intval( $db->GetOne( $sql ));
@@ -74,7 +74,7 @@ $client = new \Solarium\Client($solarium_config);
 		WHERE f.sessionid = s.sessionid
 		AND ({$sessSQL})
 		AND s.bestandid = b.bestandid
-		AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)
+		AND ( f.mtime > f.solrtime OR f.solrtime IS NULL OR f.mtime IS NULL)
 		LIMIT 0, {$pagesize}";
 
 		$rs = $db->Execute( $sql );
@@ -117,9 +117,12 @@ $client = new \Solarium\Client($solarium_config);
 			}
 			catch( \Solarium\Exception\HttpException $e ) {
 				echo "addDocument failed: ".$e->getMessage();
+				log( 'solr.php',  $sessionid, $fileid, 'exception', "addDocument failed: ".$e->getMessage() );
+
 			}
 			catch( \Exception $e ) {
 				echo "addDocument failed: ".$e->getMessage();
+				log( 'solr.php',  $sessionid, $fileid, 'exception', "addDocument failed: ".$e->getMessage() );
 			}
 			if( $p % 1000 == 0 )
 			{

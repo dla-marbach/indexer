@@ -45,7 +45,7 @@ function storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath,
   echo "storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level )\n";
 
   if( !is_dir( "{$basepath}/{$fullpath}" )) {
-    log( $sessionid, $fileid, 'error', "not a directory" );
+    log( 'recurse.php',  $sessionid, $fileid, 'error', "not a directory" );
     return;
   }
 
@@ -144,7 +144,7 @@ function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 
     // logentry on stat error
     if( $statError ) {
-      log( $sessionid, $fileid, 'error', 'cannot stat file' );
+      log( 'recurse.php',  $sessionid, $fileid, 'error', 'cannot stat file' );
       continue;
     }
     if( is_link( "{$basepath}/{$fullpath}" ))
@@ -189,11 +189,11 @@ $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
 
-  log($row['sessionid'], null, 'info', 'session starting session' );
+  log( 'recurse.php', $row['sessionid'], null, 'info', 'session starting session' );
   $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$row['sessionid']}";
   $num = intval($db->GetOne( $sql ));
   if( $num && !$update ){
-    log($row['sessionid'], null, 'info', 'skipping session: '.$sql );
+    log( 'recurse.php', $row['sessionid'], null, 'info', 'skipping session: '.$sql );
     continue;
   }
   $session = $row;
@@ -208,7 +208,7 @@ foreach( $rs as $row )
   $umount = null;
 
   if( !$mountpoint || strlen( $mountpoint ) < 3 ) {
-    log( $row['sessionid'], null, 'error', "no mountpoint" );
+    log( 'recurse.php',  $row['sessionid'], null, 'error', "no mountpoint" );
     continue;
   }
 
@@ -220,14 +220,14 @@ foreach( $rs as $row )
       echo $umount."\n";
       passthru( $umount );
       if( is_mounted( $mountpoint )){
-        log($row['sessionid'], null, 'error', "cannot umount {$mountpoint}" );
+        log( 'recurse.php', $row['sessionid'], null, 'error', "cannot umount {$mountpoint}" );
         die( "cannot umount {$mountpoint}");
       }
     }
     echo $mount."\n";
     passthru( $mount );
     if( !is_mounted( $mountpoint )){
-      log($row['sessionid'], null, 'error', "cannot mount {$datapath} to {$mountpoint}" );
+      log( 'recurse.php', $row['sessionid'], null, 'error', "cannot mount {$datapath} to {$mountpoint}" );
       die( "cannot mount {$datapath} to {$mountpoint}");
     }
 
@@ -235,7 +235,7 @@ foreach( $rs as $row )
 
 	recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
 
-  log($row['sessionid'], null, 'info', "session finished" );
+  log( 'recurse.php', $row['sessionid'], null, 'info', "session finished" );
 
 
   if( $mount ) {

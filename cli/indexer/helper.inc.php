@@ -14,11 +14,12 @@ function _escapeshellarg( $arg ) {
   return "'".str_replace("'", "'\"'\"'", $arg)."'";
 }
 
-function log( $sessionid, $fileid, $status, $message ) {
+function log( $task, $sessionid, $fileid, $status, $message ) {
   global $db;
 
-  $sql = "INSERT INTO indexlog (sessionid, fileid, status, message )
-  VALUES( {$sessionid}
+  $sql = "INSERT INTO indexlog (task, sessionid, fileid, status, message )
+  VALUES( ".$db->qstr( $task )."
+    , {$sessionid}
     , ".($fileid ? $fileid : 'null')."
     , ".$db->qstr( $status )."
     , ".$db->qstr( $message )."
