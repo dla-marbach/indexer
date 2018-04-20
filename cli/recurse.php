@@ -50,7 +50,8 @@ function storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath,
   }
 
   $sql = "UPDATE `file` SET
-    readstate=".$db->qstr( 'ok' )."
+    mtime=NOW()
+    , readstate=".$db->qstr( 'ok' )."
     , filetype=".$db->qstr( 'dir')."
     WHERE sessionid={$sessionid} AND fileid={$fileid}";
   $db->Execute( $sql );

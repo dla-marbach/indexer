@@ -58,7 +58,7 @@ $client = new \Solarium\Client($solarium_config);
 	LEFT JOIN `info_libmagic` `ilm` ON ((`f`.`sessionid` = `ilm`.`sessionid`) and (`f`.`fileid` = `ilm`.`fileid`))
 	WHERE f.sessionid = s.sessionid
 		AND ({$sessSQL})
-	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL OR f.mtime IS NULL)";
+	  AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)";
 	echo "{$sql}\n";
 
 	$num = intval( $db->GetOne( $sql ));
@@ -74,7 +74,7 @@ $client = new \Solarium\Client($solarium_config);
 		WHERE f.sessionid = s.sessionid
 		AND ({$sessSQL})
 		AND s.bestandid = b.bestandid
-		AND ( f.mtime > f.solrtime OR f.solrtime IS NULL OR f.mtime IS NULL)
+		AND ( f.mtime > f.solrtime OR f.solrtime IS NULL)
 		LIMIT 0, {$pagesize}";
 
 		$rs = $db->Execute( $sql );
