@@ -22,6 +22,7 @@ function storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
    comment=".$db->qstr( $target )."
    , readstate=".$db->qstr( $target===false ? 'error':'ok' )."
    , filetype=".$db->qstr( 'link')."
+   , mtime=NOW()
    WHERE sessionid={$sessionid} AND fileid={$fileid}";
   $db->Execute( $sql );
 }

@@ -83,6 +83,7 @@ function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
    , localcopy=".$db->qstr( $localcopy )."
    , readstate=".$db->qstr( 'ok' )."
    , filetype=".$db->qstr( 'file')."
+   , mtime=NOW()
    WHERE sessionid={$sessionid} AND fileid={$fileid}";
   $db->Execute( $sql );
 
