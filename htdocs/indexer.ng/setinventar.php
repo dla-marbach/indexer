@@ -24,7 +24,9 @@ $isEditor = inGroup( 'editor', $user );
 
 //$isAdmin = true;
 
-if( $isEditor || $isAdmin ) {
+function setInventar( $bestandid, $sessionid, $fileid, $inventar ) {
+  global $config, $db, $user;
+
   $data = array();
   $sql = "UPDATE `file` SET `inventory`=".$db->qstr( $inventar )." WHERE sessionid={$sessionid} AND fileid={$fileid}";
   $sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( $user ).", ".$db->qstr( 'inventory: '.$inventar ).")";
@@ -34,6 +36,31 @@ if( $isEditor || $isAdmin ) {
   $db->Execute( $sql );
   $db->Execute( $sql_log );
   updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $data, $config );
+
+  if( substr( $inventar, 0, strlen( $config['inventory']['bundleprefix'])) == $config['inventory']['bundleprefix']) {
+    $sql = "SELECT fileid FROM `file` WHERE sessionid={$sessionid} AND parentid={$fileid}";
+    echo "\n<!-- $sql -->\n";
+    $rs = $db->Execute( $sql );
+    foreach( $rs as $row ) {
+      setInventar( $bestandid, $sessionid, $row['fileid'], $inventar );
+    }
+    $rs->Close();
+  }
+}
+
+if( $isEditor || $isAdmin ) {
+  setInventar( $bestandid, $sessionid, $fileid, $inventar );
+/*
+  $data = array();
+  $sql = "UPDATE `file` SET `inventory`=".$db->qstr( $inventar )." WHERE sessionid={$sessionid} AND fileid={$fileid}";
+  $sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( $user ).", ".$db->qstr( 'inventory: '.$inventar ).")";
+  $data['file.inventory'] = $inventar;
+
+  echo "<!-- $sql -->\n";
+  $db->Execute( $sql );
+  $db->Execute( $sql_log );
+  updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $data, $config );
+*/
 }
 ?>
 <span class="label label-default">

@@ -5,12 +5,12 @@ require_once( 'indexer/helper.inc.php' );
 
 
 function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
-  global $db, $config, $update, $session;
+  global $db, $config, $update, $session, $hardlink;
 
   $canread = true;
 
   if( !is_file( "{$basepath}/{$fullpath}" )) {
-    log( $sessionid, $fileid, 'error', "not a file" );
+    log( 'recurse.php', $sessionid, $fileid, 'error', "not a file" );
     return;
    }
 
@@ -20,25 +20,34 @@ function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
    $md5 = md5( "{$sessionid}:{$fullpath}" );
    $localcopy = $md5{0}.'/'.$md5{1}.'/'.substr( $md5, 2 );
 
-   $src = fopen( "{$basepath}/{$fullpath}", 'r' );
-   if( $src === false ) {
-     log( $sessionid, $fileid, 'error', 'cannot original open file' );
-     return;
-   }
-     $dest = fopen( "{$localpath}/{$localcopy}", 'w' );
-     if( $dest === false ) {
-       fclose( $src );
-       log( $sessionid, $fileid, 'error', 'cannot create cache file' );
+   if( $hardlink ) {
+     $ret = link( "{$basepath}/{$fullpath}", "{$localpath}/{$localcopy}" );
+     if( !$ret ) {
+       log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
        return;
      }
-
-     $bytes = stream_copy_to_stream($src, $dest);
-     fclose( $src );
-     fclose( $dest );
-     if( $bytes === false ) {
-       unlink( "{$localpath}/{$localcopy}" );
-       log( $sessionid, $fileid, 'error', 'stream to stream copy error' );
+   }
+   else {
+     $src = fopen( "{$basepath}/{$fullpath}", 'r' );
+     if( $src === false ) {
+       log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot original open file' );
        return;
+     }
+       $dest = fopen( "{$localpath}/{$localcopy}", 'w' );
+       if( $dest === false ) {
+         fclose( $src );
+         log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot create cache file' );
+         return;
+       }
+
+       $bytes = stream_copy_to_stream($src, $dest);
+       fclose( $src );
+       fclose( $dest );
+       if( $bytes === false ) {
+         unlink( "{$localpath}/{$localcopy}" );
+         log( 'recurse.php', $sessionid, $fileid, 'error', 'stream to stream copy error' );
+         return;
+       }
      }
   /*
      if( !$bytes ) {
@@ -63,7 +72,7 @@ function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
      $sha256 = null;
    }
     if( $sha256 == null ) {
-      log( $sessionid, $fileid, 'error', 'error generating sha256 checksum' );
+      log( 'recurse.php', $sessionid, $fileid, 'error', 'error generating sha256 checksum' );
       return;
      }
   }

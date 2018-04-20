@@ -26,6 +26,7 @@ require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 
 $update = false;
+$hardlink = false;
 
 if( $argc < 2 ) die( "{$argv[0]} <sessionid|groupname>\n" );
 if( $argc >= 3 ) $update = ( strtolower( $argv[2]) == 'update' );
@@ -62,7 +63,7 @@ function storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath,
 
 function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
 {
-   global $update, $counter, $fscharset, $session, $db;
+   global $update, $counter, $fscharset, $session, $db, $hardlink;
 
    echo "recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )\n";
 
@@ -189,7 +190,6 @@ echo "{$sql}\n";
 $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
-
   log( 'recurse.php', $row['sessionid'], null, 'info', 'session starting session' );
   $sql = "SELECT COUNT(*) FROM file WHERE sessionid={$row['sessionid']}";
   $num = intval($db->GetOne( $sql ));
@@ -207,7 +207,7 @@ foreach( $rs as $row )
   //print_r( $session );
   $mount = null;
   $umount = null;
-
+  $hardlink = false;
   if( !$mountpoint || strlen( $mountpoint ) < 3 ) {
     log( 'recurse.php',  $row['sessionid'], null, 'error', "no mountpoint" );
     continue;
@@ -232,6 +232,13 @@ foreach( $rs as $row )
       die( "cannot mount {$datapath} to {$mountpoint}");
     }
 
+  }
+  elseif( intval($row['hardlink']) > 0 ) {
+    $s1 = stat( $localpath );
+    $s2 = stat( $mountpoint );
+    if( is_array( $s1 ) && is_array( $s2 )) {
+      if( $s1['dev'] == $s1['dev'] ) $hardlink = true;
+    }
   }
 
 	recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
