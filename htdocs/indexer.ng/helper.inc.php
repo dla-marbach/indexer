@@ -127,6 +127,10 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		      $field = 'session.id';
 			  $andor = ' OR ';
 			  break;
+			case 'bestand':
+		      $field = 'bestand.id';
+			  $andor = ' OR ';
+			  break;
 		   case 'id':
 		      $field = 'id';
 			  $andor = ' OR ';

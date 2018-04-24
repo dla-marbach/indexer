@@ -201,6 +201,7 @@ else {
             'text',
             'ext',
             'name',
+            'bestand',
 			'session',
 			'id',
       'checksum',
@@ -249,6 +250,7 @@ else {
 			  case 'ext':
 			  case 'name':
 			  case 'session':
+        case 'bestand':
 			  case 'path':
 			  case 'nsrl':
 			  case 'nsrl_apptype':
@@ -276,6 +278,7 @@ else {
 				'text',
 				'ext',
 				'name',
+        'bestand',
 				'session',
 				'id',
 				'checksum',

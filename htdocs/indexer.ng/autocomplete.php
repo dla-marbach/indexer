@@ -5,6 +5,7 @@ require_once( 'config.inc.php' );
 $facets = array(
 	'mime'		=>'gvfs_info.mimetype',
 	'group'		=>'session.group',
+	'bestand'	=>'bestand.id',
 	'session'	=>'session.id',
 	'type'		=>'file.filetype',
 	'name'		=>'file.name',

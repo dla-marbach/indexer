@@ -24,7 +24,7 @@ function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath
      $ret = link( "{$basepath}/{$fullpath}", "{$localpath}/{$localcopy}" );
      if( !$ret ) {
        log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
-       return;
+       //return;
      }
    }
    else {

@@ -50,7 +50,7 @@ class AVConv extends Plugin
 	   $cmd = $config['avconv']." -i ".escapeshellarg( "{$this->file}")." 2>&1";
 	   echo "$cmd\n";
        $info = shell_exec( $cmd );
-	   $info = trim( preg_replace( array( "/At least one output file must be specified/", "/  built on.*/", "/ffmpeg version.*/", "/  lib.*/", "/  configuration:.*/" ), array( '', '', '', '', ''), $info));
+	   $info = trim( preg_replace( array( "/At least one output file must be specified/", "/  built on.*/", "/  built with.*/", "/ffmpeg version.*/", "/  lib.*/", "/  configuration:.*/" ), array( '', '', '', '', '', ''), $info));
 //	   $p = strpos( $info, '[' );
 //	   if( $p ) $info = substr( $info, $p );
 	   echo "$info\n";
@@ -71,7 +71,7 @@ class AVConv extends Plugin
 			if( file_exists( $thumb.'.png' )) unlink( $thumb.'.png' );
 		}
 
-		$enc = mb_detect_encoding($info, "UTF-8,ISO-8859-1");
+		$enc = \mb_detect_encoding($info, "UTF-8,ISO-8859-1");
 		$info = iconv($enc, "UTF-8", $info);
 
 		$sql = "INSERT INTO info_avconv ( sessionid, fileid, fullinfo, status )
