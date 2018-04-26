@@ -32,7 +32,7 @@ $page = 0;
 
 $filtes = array();
 $filters[] = "bestand.id:1";
-$filters[] = "suggest:\"@langkilde.dk\"";
+$filters[] = "siegfried.format:\"MIME Email\"";
 $status = 'lock';
 $num = 0;
 
@@ -87,7 +87,7 @@ do {
     	default:
     	   die( "unknown status {$argv[2]}" );
     }
-    echo "$num: ".$sql."\n";
+    echo "{$num}/{$numResults}: ".$sql."\n";
     $db->Execute( $sql );
     $db->Execute( $sql_log );
     //updateDocumentSolarium( $db, $sessionid, $fileid, $data, $config );

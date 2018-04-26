@@ -4,6 +4,8 @@ require_once( 'config.inc.php' );
 include( 'groups.inc.php' );
 $isAdmin = @inGroup( 'admin', $_SERVER['REMOTE_USER'] );
 $isEditor = @inGroup( 'editor', $_SERVER['REMOTE_USER'] );
+$bestand = getBestand( $_SERVER['REMOTE_USER'] );
+//var_dump( $bestand );
 
 if( $isAdmin || $isEditor ) {
 	require_once( $indexerPath.'/db.inc.php' );
@@ -120,11 +122,22 @@ else {
 }
 if( !strlen( $_q )) $_q = '*:*';
 
+if( count( $bestand ) == 0 ) {
+	echo "<h2>no rights for user {$_SERVER['REMOTE_USER']}</h2>\n";
+	exit();
+}
+
 $start = ($currPage-1)*$limit;
 $select->setQuery( $_q )
 	->setStart( $start )
 	->setRows( $limit )
 	->setFields( $resultFields );
+
+	if( !in_array( 0, $bestand )) {
+		$bestandfilter = "bestand.id:(".implode( ' OR ', $bestand ).")";
+		$select->createFilterQuery('bestand')->setQuery($bestandfilter);
+		echo $bestandfilter;
+	}
 
 if( $hlq )
 {

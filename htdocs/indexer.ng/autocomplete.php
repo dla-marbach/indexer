@@ -1,5 +1,8 @@
 <?php
 require_once( 'config.inc.php' );
+require_once( 'groups.inc.php' );
+
+$bestand = getBestand( $_SERVER['REMOTE_USER'] );
 
 // facet categories => solr fields
 $facets = array(
@@ -70,6 +73,14 @@ else
 	$field = $facetSet->createFacetField( 'daFacet' );
 	//$field->setSort( Solarium\QueryType\Select\Query\Component\Facet\Field::SORT_INDEX );
 	$field->setSort( get_class( $field )::SORT_COUNT );
+
+
+	if( !in_array( 0, $bestand )) {
+		$bestandfilter = "bestand.id:(".implode( ' OR ', $bestand ).")";
+		$select->createFilterQuery('bestand')->setQuery($bestandfilter);
+		//echo $bestandfilter;
+	}
+
 
 
 	if( strlen( $searchTerm )) {
