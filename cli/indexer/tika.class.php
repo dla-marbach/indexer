@@ -97,7 +97,7 @@ AND (".Tika::where().")";
 	public static function where()
 	{
 		//return "ilm.mimetype NOT LIKE 'audio/%' AND f.name NOT LIKE '%.mp3' AND f.filetype='file'";
-		return "f.filetype='file'";
+		return "f.filetype IN ( 'file', 'archive' )";
 	}
 
 	public static function joins()
