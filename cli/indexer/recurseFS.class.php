@@ -4,15 +4,19 @@ namespace indexer;
 
 class RecurseFS
 {
-  protected $update, $counter, $session, $db, $hardlink;
+  protected $update, $counter, $session, $db, $hardlink, $prefix, $localpath, $sessionid, $basepath;
 
-  public function __construct($update, $session, $db, $hardlink)
+  public function __construct($update, $session, $db, $hardlink, $basepath, $prefix, $localpath)
   {
       $this->update = $update;
       $this->counter = 1;
       $this->session = $session;
+      $this->sessionid = $session['sessionid'];
       $this->db = $db;
       $this->hardlink = $hardlink;
+      $this->basepath = $basepath;
+      $this->prefix = $prefix;
+      $this->localpath = $localpath;
   }
 
   static function _escapeshellarg( $arg ) {
@@ -72,18 +76,18 @@ class RecurseFS
   	return $strStat;
   }
 
-  function storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
+  function storeLink( $fileid, $path, $fullpath, $file, $parentid, $level ) {
 
     //global $db
 
-    if( !is_link( "{$basepath}/{$fullpath}" )) {
-      log( $sessionid, $fileid, 'error', 'not a symlink' );
+    if( !is_link( "{$this->basepath}/{$fullpath}" )) {
+      log( $this->sessionid, $fileid, 'error', 'not a symlink' );
       return;
     }
 
-    $target = readlink( "{$basepath}/{$fullpath}" );
+    $target = readlink( "{$this->basepath}/{$fullpath}" );
     if( $target === false ) {
-     log( $sessionid, $fileid, 'error', "readlink failed" );
+     log( $this->sessionid, $fileid, 'error', "readlink failed" );
      return;
     }
 
@@ -92,11 +96,11 @@ class RecurseFS
      , readstate=".$this->db->qstr( $target===false ? 'error':'ok' )."
      , filetype=".$this->db->qstr( 'link')."
      , mtime=NOW()
-     WHERE sessionid={$sessionid} AND fileid={$fileid}";
+     WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
     $this->db->Execute( $sql );
   }
 
-  function storeOther( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
+  function storeOther( $fileid, $path, $fullpath, $file, $parentid, $level ) {
 
     // global $db;
 
@@ -104,45 +108,48 @@ class RecurseFS
       readstate=".$this->db->qstr( 'ok' )."
       , filetype=".$this->db->qstr( 'other')."
       , mtime=NOW()
-      WHERE sessionid={$sessionid} AND fileid={$fileid}";
+      WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
     $this->db->Execute( $sql );
   }
 
-  function storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
+  function storeFile( $fileid, $path, $fullpath, $file, $parentid, $level ) {
     // global $db, $config, $update, $session, $hardlink;
 
     global $config;
 
     $canread = true;
 
-    if( !is_file( "{$basepath}/{$fullpath}" )) {
-      log( 'recurse.php', $sessionid, $fileid, 'error', "not a file" );
+    if( !is_file( "{$this->basepath}/{$fullpath}" )) {
+      log( 'recurse.php', $this->sessionid, $fileid, 'error', "not a file" );
       return;
      }
 
     $localcopy = null;
-    if( $localpath )
+    if( $this->localpath )
     {
-     $md5 = md5( "{$sessionid}:{$fullpath}" );
+      if( strlen( $this->prefix ))
+        $md5 = md5( "{$this->sessionid}:{$this->prefix}/{$fullpath}" );
+      else
+        $md5 = md5( "{$this->sessionid}:{$fullpath}" );
      $localcopy = $md5{0}.'/'.$md5{1}.'/'.substr( $md5, 2 );
 
      if( $this->hardlink ) {
-       $ret = link( "{$basepath}/{$fullpath}", "{$localpath}/{$localcopy}" );
+       $ret = link( "{$this->basepath}/{$fullpath}", "{$this->localpath}/{$localcopy}" );
        if( !$ret ) {
-         log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
+         log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
          //return;
        }
      }
      else {
-       $src = fopen( "{$basepath}/{$fullpath}", 'r' );
+       $src = fopen( "{$this->basepath}/{$fullpath}", 'r' );
        if( $src === false ) {
-         log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot original open file' );
+         log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot original open file' );
          return;
        }
-         $dest = fopen( "{$localpath}/{$localcopy}", 'w' );
+         $dest = fopen( "{$this->localpath}/{$localcopy}", 'w' );
          if( $dest === false ) {
            fclose( $src );
-           log( 'recurse.php', $sessionid, $fileid, 'error', 'cannot create cache file' );
+           log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot create cache file' );
            return;
          }
 
@@ -150,22 +157,22 @@ class RecurseFS
          fclose( $src );
          fclose( $dest );
          if( $bytes === false ) {
-           unlink( "{$localpath}/{$localcopy}" );
-           log( 'recurse.php', $sessionid, $fileid, 'error', 'stream to stream copy error' );
+           unlink( "{$this->localpath}/{$localcopy}" );
+           log( 'recurse.php', $this->sessionid, $fileid, 'error', 'stream to stream copy error' );
            return;
          }
        }
     /*
        if( !$bytes ) {
-           unlink( "{$localpath}/{$localcopy}" );
+           unlink( "{$this->localpath}/{$localcopy}" );
          $localcopy = null;
          $canread = false;
        }
     */
-       chmod( "{$localpath}/{$localcopy}", 0644 );
+       chmod( "{$this->localpath}/{$localcopy}", 0644 );
      }
 
-    $cmd = $config['sha256']." -b ".RecurseFS::_escapeshellarg( "{$basepath}/{$fullpath}" );
+    $cmd = $config['sha256']." -b ".RecurseFS::_escapeshellarg( "{$this->basepath}/{$fullpath}" );
     $sha256 = null;
     if( $canread ) {
      $sha256 = shell_exec( $cmd );
@@ -178,7 +185,7 @@ class RecurseFS
        $sha256 = null;
      }
       if( $sha256 == null ) {
-        log( 'recurse.php', $sessionid, $fileid, 'error', 'error generating sha256 checksum' );
+        log( 'recurse.php', $this->sessionid, $fileid, 'error', 'error generating sha256 checksum' );
         return;
        }
     }
@@ -190,19 +197,19 @@ class RecurseFS
      , readstate=".$this->db->qstr( 'ok' )."
      , filetype=".$this->db->qstr( 'file')."
      , mtime=NOW()
-     WHERE sessionid={$sessionid} AND fileid={$fileid}";
+     WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
     $this->db->Execute( $sql );
 
   }
 
-  function storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level ) {
+  function storeDir( $fileid, $path, $fullpath, $file, $parentid, $level ) {
 
     // global $db, $update, $session;
 
-    echo "storeDir( $sessionid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level )\n";
+    echo "storeDir( $this->sessionid, $path, $fullpath, $file, $parentid, $level )\n";
 
-    if( !is_dir( "{$basepath}/{$fullpath}" )) {
-      log( 'recurse.php',  $sessionid, $fileid, 'error', "not a directory" );
+    if( !is_dir( "{$this->basepath}/{$fullpath}" )) {
+      log( 'recurse.php',  $this->sessionid, $fileid, 'error', "not a directory" );
       return;
     }
 
@@ -210,17 +217,17 @@ class RecurseFS
       readstate=".$this->db->qstr( 'ok' )."
       , filetype=".$this->db->qstr( 'dir')."
       , mtime=NOW()
-      WHERE sessionid={$sessionid} AND fileid={$fileid}";
+      WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
     $this->db->Execute( $sql );
 
-    $this->recurse( $sessionid, $basepath, $localpath, $fullpath, $fileid, $level+1 );
+    $this->recurse( $fullpath, $fileid, $level+1 );
   }
 
-  public function recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )
+  public function recurse( $path, $parentid, $level )
   {
-     echo "recurse( $sessionid, $basepath, $localpath, $path, $parentid, $level )\n";
+     echo "recurse( $this->prefix.'/'.$path, $parentid, $level )\n";
 
-     $d = opendir( "{$basepath}/{$path}" );
+     $d = opendir( "{$this->basepath}/{$path}" );
      while( $file = readdir( $d ))
      {
 
@@ -230,13 +237,13 @@ class RecurseFS
       $fullpath = "{$path}/{$file}";
   		$fullpath = trim( $fullpath, '/' );
 
-  		echo "#".($this->counter++)." {$sessionid}: {$basepath} // {$file} // {$fullpath} ----\n";
+  		echo "#".($this->counter++)." {$this->sessionid}: {$this->basepath} // {$file} // {$fullpath} ----\n";
 
 
       $fileid = null;
 
       // check for database
-      $sql = "SELECT fileid, readstate, filetype FROM file WHERE sessionid={$sessionid} AND path=".$this->db->qstr( $path )." AND name=".$this->db->qstr( $file ) ;
+      $sql = "SELECT fileid, readstate, filetype FROM file WHERE sessionid={$this->sessionid} AND path=".$this->db->qstr( $this->prefix.'/'.$path )." AND name=".$this->db->qstr( $file ) ;
       $row = $this->db->GetRow( $sql );
       if( count( $row )) {
         $fileid = $row['fileid'];
@@ -248,14 +255,14 @@ class RecurseFS
       }
 
       // get status and permissions.
-      $strStat = RecurseFS::doStat( "{$basepath}/{$fullpath}", $stat, $statError );
+      $strStat = RecurseFS::doStat( "{$this->basepath}/{$fullpath}", $stat, $statError );
 
       // if fileid is set, we must not create a new entry...
       if( $fileid ) {
         $sql = "UPDATE `file` SET
           parentid={$parentid}
           , name=".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $file ))."
-          , path=".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $path ))."
+          , path=".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $this->prefix.'/'.$path ))."
           , `level`={$level}
           , `filesize`=".($statError ? 0 : intval($stat['size']))."
           , `filectime`='".date( "Y-m-d H:i:s", $stat['ctime'] )."'
@@ -263,7 +270,7 @@ class RecurseFS
           , `fileatime`='".date( "Y-m-d H:i:s", $stat['atime'] )."'
           , `stat`=".$this->db->qstr( $strStat )."
           , readstate=".$this->db->qstr( $statError ? 'error':'start' )."
-          WHERE sessionid={$sessionid} AND fileid={$fileid}";
+          WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
 
         $this->db->Execute( $sql );
       }
@@ -280,10 +287,10 @@ class RecurseFS
           , `fileatime`
           , `stat`
           , readstate )
-          VALUES( {$sessionid}
+          VALUES( {$this->sessionid}
             , {$parentid}
             , ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $file ))."
-            , ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $path ))."
+            , ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $this->prefix.'/'.$path ))."
             , {$level}
             , ".($statError ? 0 : intval($stat['size']))."
             , '".date( "Y-m-d H:i:s", $stat['ctime'] )."'
@@ -299,28 +306,28 @@ class RecurseFS
 
       // logentry on stat error
       if( $statError ) {
-        log( 'recurse.php',  $sessionid, $fileid, 'error', 'cannot stat file' );
+        log( 'recurse.php',  $this->sessionid, $fileid, 'error', 'cannot stat file' );
         continue;
       }
-      if( is_link( "{$basepath}/{$fullpath}" ))
+      if( is_link( "{$this->basepath}/{$fullpath}" ))
   		{
-  			echo "link: {$basepath}/{$fullpath} --> {$target}\n";
-  			$this->storeLink( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+  			echo "link: {$this->basepath}/{$fullpath} --> {$target}\n";
+  			$this->storeLink( $fileid, $path, $fullpath, $file, $parentid, $level );
   		}
-  		elseif( is_dir( "{$basepath}/{$fullpath}" ))
+  		elseif( is_dir( "{$this->basepath}/{$fullpath}" ))
   		{
-  			echo "dir: {$basepath}/{$fullpath}\n";
-        $this->storeDir( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+  			echo "dir: {$this->basepath}/{$fullpath}\n";
+        $this->storeDir( $fileid, $path, $fullpath, $file, $parentid, $level );
   		}
-  		elseif( is_file( "{$basepath}/{$fullpath}" ))
+  		elseif( is_file( "{$this->basepath}/{$fullpath}" ))
   		{
-  			echo "file: {$basepath}/{$fullpath}\n";
-        $this->storeFile( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+  			echo "file: {$this->basepath}/{$fullpath}\n";
+        $this->storeFile( $fileid, $path, $fullpath, $file, $parentid, $level );
   		}
   		else
   		{
-  		   echo "other: {$basepath}/{$fullpath}\n";
-         $this->storeOther( $sessionid, $fileid, $basepath, $localpath, $path, $fullpath, $file, $parentid, $level );
+  		   echo "other: {$this->basepath}/{$fullpath}\n";
+         $this->storeOther( $fileid, $path, $fullpath, $file, $parentid, $level );
   		}
      }
      closedir( $d );

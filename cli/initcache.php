@@ -37,6 +37,7 @@ foreach( $rs as $row )
 	$basepath = $row['localpath'];
 
 	if( !is_dir( $basepath )) mkdir( $basepath, 0755, true );
+	if( !is_dir( $basepath.'/archive' )) mkdir( $basepath.'/archive', 0755, true );
 
 
 	for( $i = 0; $i < strlen( $dirs ); $i++ )

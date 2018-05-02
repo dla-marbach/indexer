@@ -100,13 +100,13 @@ foreach( $rs as $row )
     $s1 = stat( $localpath );
     $s2 = stat( $mountpoint );
     if( is_array( $s1 ) && is_array( $s2 )) {
-      if( $s1['dev'] == $s1['dev'] ) $hardlink = true;
+      if( $s1['dev'] == $s2['dev'] ) $hardlink = true;
     }
   }
 
-  $recurse = new RecurseFS($update, $session, $db, $hardlink);
+  $recurse = new RecurseFS($update, $session, $db, $hardlink, $mountpoint, '', $localpath);
 
-	$recurse->recurse( $row['sessionid'], $mountpoint, $localpath, '', 0, 0 );
+	$recurse->recurse( '', 0, 0 );
 
   log( 'recurse.php', $row['sessionid'], null, 'info', "session finished" );
 

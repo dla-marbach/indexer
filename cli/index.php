@@ -90,15 +90,15 @@ $plugin = new $pluginClass( );
 
 $sql = "
 SELECT count(*)
-FROM `session` s, `file` f ";
+FROM `session` s, `file` f";
 foreach( $pluginClass::joins() as $short=>$dbname )
 {
 	$sql .= "
-	LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
+LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
 }
 $sql .= "
-WHERE f.sessionid = s.sessionid AND {$sessSQL} AND ".$pluginClass::where();
-
+WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where();
+echo "{$sql}\n";
 $num = intval( $db->GetOne( $sql ));
 $pages = ceil( $num/$pagesize );
 $p = $startpage * $pagesize;

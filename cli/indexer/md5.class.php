@@ -35,7 +35,7 @@ class MD5 extends Plugin
 
 	public static function where()
 	{
-		return "filetype='file' AND md5 IS NULL";
+		return "filetype IN ('file', 'archive') AND md5 IS NULL";
 		// return 'f.localcopy IS NOT NULL AND f.md5 IS NULL';
 
 	}

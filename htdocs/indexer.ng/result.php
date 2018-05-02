@@ -7,9 +7,9 @@ $isEditor = @inGroup( 'editor', $_SERVER['REMOTE_USER'] );
 $bestand = getBestand( $_SERVER['REMOTE_USER'] );
 //var_dump( $bestand );
 
-if( $isAdmin || $isEditor ) {
+//if( $isAdmin || $isEditor ) {
 	require_once( $indexerPath.'/db.inc.php' );
-}
+//}
 
 //require_once( 'helper.inc.php' );
 
@@ -215,6 +215,7 @@ if( $hasError )
 		$doc = $document->getFields();
 		$id = $doc['id'];
 		echo "<!-- #{$id} ------------------------------------------------------------------- -->\n";
+		$bestandid = $doc['bestand.id'];
 		$session = $doc['session.id'];
 		$groups = $doc['session.group'];
 		$fileid = $doc['file.id'];
@@ -238,6 +239,11 @@ if( $hasError )
 		$locked = $doc['status.locked'];
 		$status = $doc['status.status'];
 		$inventory = isset( $doc['file.inventory'] ) ? $doc['file.inventory'] : 'none';
+
+		$isAdmin = @inGroup( 'admin', $_SERVER['REMOTE_USER'], $bestandid );
+		$isEditor = @inGroup( 'editor', $_SERVER['REMOTE_USER'], $bestandid );
+
+
 		if( strlen( trim( $inventory )) == 0 ) $inventory = 'none';
 		?>
 		<!--
