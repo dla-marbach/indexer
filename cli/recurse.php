@@ -37,14 +37,20 @@ require_once( 'indexer/helper.inc.php' );
 require_once( 'indexer/recurseFS.class.php' );
 
 
-if( is_numeric( $argv[1] ))
+$p2 = strtolower(trim( $argv[1] ));
+if( preg_match( '/^[0-9]+$/', $p2 ))
 {
-	$sessionid = intval( $argv[1] );
-	$sql = "SELECT * FROM session WHERE `ignore`=0 AND sessionid=".$sessionid;
+	$sessionid = intval( $p2 );
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `sessionid`={$sessionid}";
+}
+elseif( preg_match( '/^b[0-9]+$/', $p2 ))
+{
+	$bestandid = intval( substr( $p2, 1 ));
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `bestandid`={$bestandid}";
 }
 else
 {
-	$group = trim( $argv[1] );
+	$group = $p2;
 	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `group`=".$db->qstr($group);
 	if( $group == 'all' ) $sql = "SELECT * FROM session WHERE `ignore`=0";
 }

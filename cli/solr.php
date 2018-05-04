@@ -32,14 +32,20 @@ gc_enable(); // Enable Garbage Collector
 
 if( $argc < 2 ) die( "{$argv[0]} <sessionid|group>\n" );
 
-if( is_numeric( $argv[1] ))
+$p2 = strtolower(trim( $argv[1] ));
+if( preg_match( '/^[0-9]+$/', $p2 ))
 {
-	$sessionid = intval( $argv[1] );
+	$sessionid = intval( $p2 );
 	$sessSQL = "s.sessionid=".$sessionid;
+}
+elseif( preg_match( '/^b[0-9]+$/', $p2 ))
+{
+	$bestandid = intval( substr( $p2, 1 ));
+	$sessSQL = "s.bestandid=".$bestandid;
 }
 else
 {
-	$group = trim( $argv[1] );
+	$group = $p2;
 	$sessSQL = "s.group=".$db->qstr( $group );
 	if( $group == 'all' ) $sessSQL = '1=1';
 }

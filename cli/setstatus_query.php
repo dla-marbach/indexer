@@ -32,7 +32,7 @@ $page = 0;
 
 $filtes = array();
 $filters[] = "bestand.id:1";
-$filters[] = "siegfried.format:\"MIME Email\"";
+$filters[] = "(status.locked:\"false\") AND (suggest:\"@mail.dk\")";
 $status = 'lock';
 $num = 0;
 

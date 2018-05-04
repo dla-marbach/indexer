@@ -159,6 +159,13 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('session.localpath', $row['localpath']);
    $doc->addField('session.group', $row['group']);
 
+	 // Archive
+	 if( $row['archiveid'] ) {
+		 $sql = "SELECT name FROM file WHERE fileid={$row['archiveid']}";
+		 $archivename = $db->GetOne( $sql );
+		 $doc->addField('archive.id', "{$bestandid}.{$sessionid}.{$row['archiveid']}");
+	   $doc->addField('archive.name', $archivename);
+ 	 }
 	 // File
    $doc->addField('file.id', $fileid);
    $doc->addField('file.parentid', $row['parentid']);

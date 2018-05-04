@@ -4,9 +4,9 @@ namespace indexer;
 
 class RecurseFS
 {
-  protected $update, $counter, $session, $db, $hardlink, $prefix, $localpath, $sessionid, $basepath;
+  protected $update, $counter, $session, $db, $hardlink, $prefix, $localpath, $sessionid, $basepath, $archiveid;
 
-  public function __construct($update, $session, $db, $hardlink, $basepath, $prefix, $localpath)
+  public function __construct($update, $session, $db, $hardlink, $basepath, $prefix, $localpath, $archiveid = null )
   {
       $this->update = $update;
       $this->counter = 1;
@@ -17,6 +17,7 @@ class RecurseFS
       $this->basepath = $basepath;
       $this->prefix = $prefix;
       $this->localpath = $localpath;
+      $this->archiveid = $archiveid;
   }
 
   static function _escapeshellarg( $arg ) {
@@ -261,6 +262,7 @@ class RecurseFS
       if( $fileid ) {
         $sql = "UPDATE `file` SET
           parentid={$parentid}
+          , archiveid=".($this->archiveid ? $this->archiveid : 'NULL' )."
           , name=".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $file ))."
           , path=".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $this->prefix.'/'.$path ))."
           , `level`={$level}
@@ -278,6 +280,7 @@ class RecurseFS
         // insert initial record. continue to next file on stat error
         $sql = "INSERT INTO `file` (sessionid
           , parentid
+          , archiveid
           , name
           , path
           , `level`
@@ -289,6 +292,7 @@ class RecurseFS
           , readstate )
           VALUES( {$this->sessionid}
             , {$parentid}
+            , ".($this->archiveid ? $this->archiveid : 'NULL' )."
             , ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $file ))."
             , ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $this->prefix.'/'.$path ))."
             , {$level}

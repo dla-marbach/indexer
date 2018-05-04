@@ -47,14 +47,20 @@ $p1 = trim( $argv[1] );
 $pluginClass = 'indexer\\'.$p1;
 //$sessionid = intval( $argv[2] );
 
-if( is_numeric( trim($argv[2]) ))
+$p2 = strtolower(trim( $argv[2] ));
+if( preg_match( '/^[0-9]+$/', $p2 ))
 {
-	$sessionid = intval( $argv[2] );
+	$sessionid = intval( $p2 );
 	$sessSQL = "s.sessionid=".$sessionid;
+}
+elseif( preg_match( '/^b[0-9]+$/', $p2 ))
+{
+	$bestandid = intval( substr( $p2, 1 ));
+	$sessSQL = "s.bestandid=".$bestandid;
 }
 else
 {
-	$group = trim( $argv[2] );
+	$group = $p2;
 	$sessSQL = "s.group=".$db->qstr( $group );
 	if( $group == 'all' ) $sessSQL = '1=1';
 }

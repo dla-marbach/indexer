@@ -102,6 +102,14 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		      $field = 'tika.fullinfo';
 			  $andor = ' AND ';
 			  break;
+			case 'archiveid':
+ 		      $field = 'archive.id';
+	 			  $andor = ' OR ';
+	 			  break;
+			case 'archivename':
+ 		      $field = 'archive.name';
+ 			  $andor = ' OR ';
+ 			  break;
 		   case 'nsrl':
 		      $field = 'nsrl.found';
 			  $andor = ' AND ';
@@ -182,6 +190,7 @@ function buildQuery( $_query, &$highlightQuery, $helper = null )
 		  switch( $name )
 		  {
 			case 'id':
+			case 'archiveid':
 				if( $value{0} == '#' ) $value = substr( $value, 1 );
 				$v = $helper ? $helper->escapePhrase( $value ) : str_replace( ' ', "\\ ", $value );
 				$or .= "{$field}:".$v;

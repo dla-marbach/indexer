@@ -37,14 +37,20 @@ require_once( 'indexer/helper.inc.php' );
 require_once( 'indexer/recurseFS.class.php' );
 
 
-if( is_numeric( $argv[1] ))
+$p2 = strtolower(trim( $argv[1] ));
+if( preg_match( '/^[0-9]+$/', $p2 ))
 {
-	$sessionid = intval( $argv[1] );
-	$sql = "SELECT * FROM session WHERE `ignore`=0 AND sessionid=".$sessionid;
+	$sessionid = intval( $p2 );
+	$sessSQL = "s.sessionid=".$sessionid;
+}
+elseif( preg_match( '/^b[0-9]+$/', $p2 ))
+{
+	$bestandid = intval( substr( $p2, 1 ));
+	$sessSQL = "s.bestandid=".$bestandid;
 }
 else
 {
-	$group = trim( $argv[1] );
+	$group = $p2;
 	$sql = "SELECT * FROM session WHERE `ignore`=0 AND `group`=".$db->qstr($group);
 	if( $group == 'all' ) $sql = "SELECT * FROM session WHERE `ignore`=0";
 }
@@ -55,7 +61,9 @@ $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
   $session = $row;
-  log( 'recurse.php', $row['sessionid'], null, 'info', 'session starting session' );
+	echo "{$session['sessionid']}:{$session['name']}\n";
+  log( 'recurse_archive.php', $row['sessionid'], null, 'info', 'start unpacking session' );
+
   $sql = "SELECT f.*, isi.id AS pronom, ah.name AS hname, ah.unpack, ah.remove
     FROM info_archive ia, archive_heuristic ah,
     `file` f LEFT JOIN info_nsrl ins ON (f.sessionid=ins.sessionid AND f.fileid=ins.fileid)
@@ -63,12 +71,14 @@ foreach( $rs as $row )
     WHERE f.sessionid=ia.sessionid
       AND f.fileid=ia.fileid
       AND ia.archive_heuristicid=ah.archive_heuristicid
-      AND ins.status IS NULL
+      AND ins.ProductCode IS NULL
       AND isi.id <> ".$db->qstr("x-fmt/412")."
       AND f.sessionid={$row['sessionid']} AND f.filetype=".$db->qstr( 'archive' );
+	//echo "{$sql}\n";
   $rs2 = $db->Execute( $sql );
   foreach( $rs2 as $row2 ) {
     $file = $row2;
+		$fileid = $file['fileid'];
 
   	$basepath = $session['basepath'];
     $localpath = $session['localpath'];
@@ -82,6 +92,14 @@ foreach( $rs as $row )
     $remove = $file['remove'];
     $hardlink = false;
 
+		if( !$update ) {
+			$sql = "SELECT COUNT(*) FROM file WHERE archiveid={$fileid}";
+			$num = intval( $db->GetOne( $sql ));
+			if( $num )
+				echo "[{$fileid}] - already ingested\n";
+				continue;
+		}
+
     if( $unpack ) {
       $unpack = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($unpackPath) ), $unpack );
       if( $remove ) $remove = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($unpackPath) ), $remove );
@@ -90,24 +108,44 @@ foreach( $rs as $row )
         echo $remove."\n";
         passthru( $remove );
         if( is_mounted( $unpackPath )){
-          log( 'recurse.php', $row['sessionid'], null, 'error', "cannot umount {$unpackPath}" );
-          die( "cannot umount {$unpackPath}");
+          log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] cannot umount {$unpackPath}" );
+          die( "[{$fileid}] cannot umount {$unpackPath}");
         }
       }
       echo $unpack."\n";
       passthru( $unpack );
       if( $remove && !is_mounted( $unpackPath )) {
-        log( 'recurse.php', $row['sessionid'], null, 'error', "cannot mount {$unpackPath}" );
-        echo( "cannot mount {$unpackPath}\n");
+        log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] cannot mount {$unpackPath}" );
+        echo( "[{$fileid}] cannot mount {$unpackPath}\n");
         rmdir( $unpackPath );
         continue;
       }
 
       if( file_exists( $unpackPath.substr( $file['localcopy'], 3 ) ) ) {
-        echo "rename: ".$unpackPath.substr( $file['localcopy'], 3 )." --> ".$unpackPath.'/'.$file['name']."\n";
-        rename( $unpackPath.substr( $file['localcopy'], 3 ), $unpackPath.'/'.$file['name'] );
+				if( strlen($file['ext']))
+					$target = $unpackPath.'/'.substr( $file['name'], 0, -strlen( $file['ext'] )-1 );
+				else
+					$target = $unpackPath.'/'.$file['name'];
+
+        echo "rename: ".$unpackPath.substr( $file['localcopy'], 3 )." --> ".$target."\n";
+        rename( $unpackPath.substr( $file['localcopy'], 3 ), $target );
       }
     }
+
+		$hasFiles = false;
+		$d = opendir( $unpackPath );
+		while( $f = readdir( $d )) {
+			if( $f == '.' || $f == '..' ) continue;
+			$hasFiles = true;
+			break;
+		}
+		closedir( $d );
+		if( !$hasFiles ) {
+			log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] empty archive: {$unpackPath}" );
+			echo( "[{$fileid}] empty archive: {$unpackPath}\n");
+			rmdir( $unpackPath );
+			continue;
+		}
 
     $s1 = stat( $localpath );
     $s2 = stat( $unpackPath );
@@ -117,12 +155,9 @@ foreach( $rs as $row )
 
     echo "hardlink: {$hardlink}\n";
 
-    $recurse = new RecurseFS($update, $session, $db, $hardlink, $unpackPath, "{$file['path']}/{$file['name']}", $localpath);
+    $recurse = new RecurseFS($update, $session, $db, $hardlink, $unpackPath, "{$file['path']}/{$file['name']}", $localpath, $fileid);
 
-  	$recurse->recurse( '', $file['fileid'], $file['level']+1 );
-
-    log( 'recurse.php', $row['sessionid'], null, 'info', "session finished" );
-
+  	$recurse->recurse( '', $fileid, $file['level']+1 );
 
     if( $remove ) {
       echo $remove."\n";
@@ -130,6 +165,8 @@ foreach( $rs as $row )
       rmdir( $unpackPath );
     }
   }
+
+	log( 'recurse_archive.php', $row['sessionid'], null, 'info', "unpacking session finished" );
 
 }
 ?>

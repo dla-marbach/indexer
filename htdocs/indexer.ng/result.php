@@ -25,6 +25,8 @@ $resultFields = array(
 	'session.basepath',
 	'session.localpath',
 	'session.group',
+	'archive.id',
+	'archive.name',
 	'file.id',
 	'file.name',
 	'file.localcopy',
@@ -228,6 +230,7 @@ if( $hasError )
 		$fullpath = "{$doc['session.basepath']}/{$doc['file.path']}/{$doc['file.name']}";
 		//$path = substr( $fullpath, 0, -strlen( $filename ));
 		$hasTIKA = strlen( @trim( $doc['tika.fullinfo'] )) > 0;
+		$hasArchive = strlen( @trim( $doc['archive.id'] )) > 0;
 		$hasIMAGICK = strlen( @trim( $doc['imagick.fullinfo'] )) > 0;
 		$hasAVCONV = strlen( @trim( $doc['avconv.fullinfo'] )) > 0;
 		$hasGVFS = strlen( @trim( $doc['gvfs_info.fullinfo'] )) > 0;
@@ -455,7 +458,18 @@ if( $hasError )
 				 </a>
 			</span>
 			<?php } ?>
-
+			<!-- Archiv -->
+			<?php
+				if( $hasArchive ) {
+					$archive_id = $doc['archive.id'];
+					$archive_name = $doc['archive.name'];
+			?>
+			<span class="label label-default">
+				<a style="color:#000000;" href="javascript:newquery( 'archiveid:#<?php echo $archive_id; ?>' );">
+					<?php echo htmlentities("<".$archive_name.">"); ?>
+				</a>
+		 </span>
+		<?php } ?>
 				<!-- file.path -->
 				<div style="padding-left: 24px;">
 					<a style="color:#909090;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $path ))); ?>' );"><?php echo htmlspecialchars( $path ); ?></a>
