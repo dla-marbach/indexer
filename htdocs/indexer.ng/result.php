@@ -357,6 +357,8 @@ if( $hasError )
 				<span class="glyphicon glyphicon-download"></span></a> <?php } ?>
 				<?php if( $doc['file.filetype'] == 'dir' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", ($path=='/'?'':$path)."/{$filename}" ))); ?>' );">
 				<span class="glyphicon glyphicon-list"></span></a> <?php } ?>
+				<?php if( $doc['file.filetype'] == 'archive' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> archiveid:<?php echo htmlspecialchars( "#{$doc['id']}" ); ?>' );">
+				<span class="glyphicon glyphicon-list"></span></a> <?php } ?>
 
 				<!-- status -->
 				<div style="display: inline-block;" id="ampel<?php echo str_replace( '.', '', $id ); ?>">

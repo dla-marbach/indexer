@@ -25,7 +25,7 @@ namespace indexer;
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
 
-function syncToZotero( $inventoryno, $data, $notes, $zoterogroup ) {
+function syncToZotero( $inventoryno, $url, $data, $notes, $zoterogroup ) {
   global $db;
 
   $sql = "SELECT * FROM inventoryno WHERE inventoryno=".$db->qstr( $inventoryno );
@@ -35,13 +35,24 @@ function syncToZotero( $inventoryno, $data, $notes, $zoterogroup ) {
   // falls es noch keinen eintrag gibt, dann das handle erzeugen
   if( !$inventory['ref'] ) {
     $sql = "REPLACE INTO mediathek_handle.handles_handle( handle, type, data )
-      VALUES( ".$db->qstr( "20.500.11806/mediathek/iventory/".$inventoryno )."
+      VALUES( ".$db->qstr( "20.500.11806/mediathek/inventory/".$inventoryno )."
         , ".$db->qstr( "URL" )."
         , ".$db->qstr( $url ).")";
     echo "{$sql}\n";
-    //$db->Execute( $sql );
+    $db->Execute( $sql );
   }
 
+  foreach( $notes as $note ) {
+    // falls es noch keinen eintrag gibt, dann das handle erzeugen
+    $sql = "REPLACE INTO mediathek_handle.handles_handle( handle, type, data )
+      VALUES( ".$db->qstr( "20.500.11806/mediathek/inventory/{$inventoryno}/{$note['id']}" )."
+        , ".$db->qstr( "URL" )."
+        , ".$db->qstr( $note['url'] ).")";
+    echo "{$sql}\n";
+    $db->Execute( $sql );
+
+
+  }
   //print_r( $data );
   //print_r( $notes );
   //print_r( $zoterogroup );
@@ -100,7 +111,7 @@ do {
     $fileid = $files[0]['fileid'];
     $zoterogroup = $files[0]['zoterogroup'];
     $id = "{$bestandid}.{$sessionid}.{$fileid}";
-    $url = "https://ba14ns21408.adm.ds.fhnw.ch/indexer.ng/#inventory%3A%{$inventoryno}\$\$1";
+    $url = "https://ba14ns21408.adm.ds.fhnw.ch/indexer.ng/#inventory%3A%20{$inventoryno}\$\$1";
 
     $data = array();
     $data['title'] = "$inventoryno";
@@ -112,15 +123,16 @@ do {
     $data['archive'] = "Mediathek HGK";
     $data['standort_archive'] = $bestandname;
     $data['signatur'] = $inventoryno;
-    $data['abstract'] = count( $files )." items";
+    //$data['abstract'] = count( $files )." items";
 
     $notes = array();
     $p = 0;
     $anz = count( $files );
     foreach( $files as $file ) {
       $p++;
-      $furl = "https://ba14ns21408.adm.ds.fhnw.ch/indexer.ng/#checksum%3A%{$file['sha256']}\$\$1";
+      $furl = "https://ba14ns21408.adm.ds.fhnw.ch/indexer.ng/#checksum%3A%20{$file['sha256']}\$\$1";
       $ftitle = sprintf( "%03u", $p )."/".sprintf( "%03u" , $anz)." [#{$file['bestandid']}.{$file['sessionid']}.{$file['fileid']}] {$file['name']}";
+      $fid = "{$file['bestandid']}.{$file['sessionid']}.{$file['fileid']}";
       $text = "Bestand {$file['bestandid']}: {$file['bestandname']}\n";
       $text .= "Session {$file['sessionid']}: {$file['sessionname']}\n";
       $text .= "File {$file['fileid']}: {$file['name']}\n";
@@ -173,10 +185,10 @@ do {
         $text .= substr( "{$row['fullinfo']}\n", 0, 2000 );
       }
 
-      $notes[] = array( 'url'=>$furl, 'title'=>$ftitle, 'text'=>$text );
+      $notes[] = array( 'url'=>$furl, 'title'=>$ftitle, 'text'=>$text, 'id'=>$fid );
     }
 
-    syncToZotero( $inventoryno, $data, $notes, $zoterogroup );
+    syncToZotero( $inventoryno, $url, $data, $notes, $zoterogroup );
 
   }
 } while( $pagesize < $num );

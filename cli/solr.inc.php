@@ -190,7 +190,7 @@ function addDocument( $db, $row, $client, $config, $echo = true )
    $doc->addField('file.archivetime', $datetime->format( "Y-m-d\TH:i:s" ).'Z');
    $doc->addField('file.access', $row['access']);
 	 $doc->addField('file.relevance', $row['relevance']);
-	 $doc->addField('file.inventory', $row['inventory']);
+	 $doc->addField('file.inventory', $row['inventory'] == null ? 'none' : $row['inventory']);
 
 //   $doc->addField('status.status', $row['status']);
 //   $doc->addField('status.locked', $row['lock']);

@@ -41,12 +41,12 @@ $p2 = strtolower(trim( $argv[1] ));
 if( preg_match( '/^[0-9]+$/', $p2 ))
 {
 	$sessionid = intval( $p2 );
-	$sessSQL = "s.sessionid=".$sessionid;
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND sessionid=".$sessionid;
 }
 elseif( preg_match( '/^b[0-9]+$/', $p2 ))
 {
 	$bestandid = intval( substr( $p2, 1 ));
-	$sessSQL = "s.bestandid=".$bestandid;
+	$sql = "SELECT * FROM session WHERE `ignore`=0 AND bestandid=".$bestandid;
 }
 else
 {
@@ -61,6 +61,8 @@ $rs = $db->Execute( $sql );
 foreach( $rs as $row )
 {
   $session = $row;
+	$bestandid = $session['bestandid'];
+	$sessionid = $session['sessionid'];
 	echo "{$session['sessionid']}:{$session['name']}\n";
   log( 'recurse_archive.php', $row['sessionid'], null, 'info', 'start unpacking session' );
 
@@ -74,12 +76,12 @@ foreach( $rs as $row )
       AND ins.ProductCode IS NULL
       AND isi.id <> ".$db->qstr("x-fmt/412")."
       AND f.sessionid={$row['sessionid']} AND f.filetype=".$db->qstr( 'archive' );
-	//echo "{$sql}\n";
+	echo "{$sql}\n";
   $rs2 = $db->Execute( $sql );
   foreach( $rs2 as $row2 ) {
+
     $file = $row2;
 		$fileid = $file['fileid'];
-
   	$basepath = $session['basepath'];
     $localpath = $session['localpath'];
     $mountpoint = $session['mountpoint'];
@@ -91,19 +93,21 @@ foreach( $rs as $row )
     $unpack = $file['unpack'];
     $remove = $file['remove'];
     $hardlink = false;
+		echo "#{$bestandid}.{$sessionid}.{$fileid}\n";
 
 		if( !$update ) {
 			$sql = "SELECT COUNT(*) FROM file WHERE archiveid={$fileid}";
+			//echo "{$sql}\n";
 			$num = intval( $db->GetOne( $sql ));
-			if( $num )
+			if( $num ) {
 				echo "[{$fileid}] - already ingested\n";
 				continue;
+			}
 		}
 
-    if( $unpack ) {
+    if( $unpack != null ) {
       $unpack = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($unpackPath) ), $unpack );
       if( $remove ) $remove = preg_replace( array( '/\$\$IMAGE\$\$/', '/\$\$MOUNTPOINT\$\$/' ), array( _escapeshellarg($datapath), _escapeshellarg($unpackPath) ), $remove );
-
       if( $remove && is_mounted( $unpackPath )){
         echo $remove."\n";
         passthru( $remove );
