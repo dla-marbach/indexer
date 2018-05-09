@@ -68,13 +68,13 @@ foreach( $rs as $row )
 
   $sql = "SELECT f.*, isi.id AS pronom, ah.name AS hname, ah.unpack, ah.remove
     FROM info_archive ia, archive_heuristic ah,
-    `file` f LEFT JOIN info_nsrl ins ON (f.sessionid=ins.sessionid AND f.fileid=ins.fileid)
-    LEFT JOIN info_siegfried isi ON (f.sessionid=isi.sessionid AND f.fileid=isi.fileid)
+    `file` f
+		LEFT JOIN info_nsrl ins ON (f.sessionid=ins.sessionid AND f.fileid=ins.fileid)
+    LEFT JOIN info_siegfried isi ON (f.sessionid=isi.sessionid AND f.fileid=isi.fileid AND isi.id <> ".$db->qstr("x-fmt/412").")
     WHERE f.sessionid=ia.sessionid
       AND f.fileid=ia.fileid
       AND ia.archive_heuristicid=ah.archive_heuristicid
       AND ins.ProductCode IS NULL
-      AND isi.id <> ".$db->qstr("x-fmt/412")."
       AND f.sessionid={$row['sessionid']} AND f.filetype=".$db->qstr( 'archive' );
 	echo "{$sql}\n";
   $rs2 = $db->Execute( $sql );

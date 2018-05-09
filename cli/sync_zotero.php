@@ -21,15 +21,23 @@
  * along with indexer.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************/
 namespace indexer;
-
 require_once( 'config.inc.php' );
 include( 'db.inc.php' );
+include( 'zotero.inc.php' );
 
 function syncToZotero( $inventoryno, $url, $data, $notes, $zoterogroup ) {
   global $db;
 
+  $tmplDocument = getZoteroTemplate('document');
+  $tmplNote = getZoteroTemplate('note');
+  $tmplLinkAttch = getZoteroTemplate('attachment&linkMode=linked_url');
+
+  $isNew = false;
+  $objZotero = null;
+  $itemkey = '';
+
   $sql = "SELECT * FROM inventoryno WHERE inventoryno=".$db->qstr( $inventoryno );
-  echo "{$sql}\n";
+  //echo "{$sql}\n";
   $inventory = $db->GetRow( $sql );
 
   // falls es noch keinen eintrag gibt, dann das handle erzeugen
@@ -38,9 +46,26 @@ function syncToZotero( $inventoryno, $url, $data, $notes, $zoterogroup ) {
       VALUES( ".$db->qstr( "20.500.11806/mediathek/inventory/".$inventoryno )."
         , ".$db->qstr( "URL" )."
         , ".$db->qstr( $url ).")";
-    echo "{$sql}\n";
+    //echo "{$sql}\n";
     $db->Execute( $sql );
+
+    $objZotero = clone $tmplDocument;
+    $isNew = true;
+  }else{
+    $itemkey = ltrim($inventory['ref'],"zotero://");
   }
+
+
+  if($isNew){
+      $objZotero->title = $data['title'];
+      if(!is_null($data['datum'])) $objZotero->date = $data['datum']->format('Y-m-d H:i:s');
+      $objZotero->url = $data['url'];
+      $objZotero->archive = $data['archive'];
+      $objZotero->archiveLocation = $data['standort_archive'];
+      $objZotero->callNumber = $data['signatur'];
+      $itemkey = postItem($objZotero, $zoterogroup);
+  }
+
 
   foreach( $notes as $note ) {
     // falls es noch keinen eintrag gibt, dann das handle erzeugen
@@ -48,20 +73,30 @@ function syncToZotero( $inventoryno, $url, $data, $notes, $zoterogroup ) {
       VALUES( ".$db->qstr( "20.500.11806/mediathek/inventory/{$inventoryno}/{$note['id']}" )."
         , ".$db->qstr( "URL" )."
         , ".$db->qstr( $note['url'] ).")";
-    echo "{$sql}\n";
+    //echo "{$sql}\n";
     $db->Execute( $sql );
-
-
+    $hdl = "http://hdl.handle.net/20.500.11806/mediathek/inventory/{$inventoryno}/{$note['id']}";
+    if($isNew || !link_exists($zoterogroup, $itemkey, $hdl)){
+      $objLinkAttch = clone $tmplLinkAttch;
+      $objLinkAttch->title = $note['title'];
+      $objLinkAttch->url = $hdl;
+      $objLinkAttch->note = nl2br($note['text']);
+      $objLinkAttch->parentItem = $itemkey;
+      postNote($objLinkAttch,$zoterogroup);
+    }
   }
   //print_r( $data );
   //print_r( $notes );
   //print_r( $zoterogroup );
 
+
+
+
   $sql = "UPDATE inventoryno
-    SET synctime=NOW(), ref=".$db->qstr( 'da zotero id' )."
+    SET synctime=NOW(), ref=".$db->qstr( "zotero://$itemkey" )."
     WHERE inventoryno=".$db->qstr( $inventoryno );
-  echo "{$sql}\n";
-  //$db->Execute( $sql );
+  //echo "{$sql}\n";
+  $db->Execute( $sql );
 
 }
 
@@ -88,7 +123,7 @@ else
 
 $sql = "SELECT DISTINCT f.inventory
   FROM `file` f, session s, inventoryno i, bestand b
-  WHERE b.zoterogroup IS NOT NULL AND b.bestandid=s.sessionid AND f.sessionid=s.sessionid AND f.inventory=i.inventoryno AND {$sessSQL} AND (i.synctime IS NULL OR i.synctime <= f.mtime)";
+  WHERE b.zoterogroup IS NOT NULL AND b.bestandid=s.bestandid AND f.sessionid=s.sessionid AND f.inventory=i.inventoryno AND {$sessSQL} AND (i.synctime IS NULL OR i.synctime <= f.mtime)";
 
 $pagesize = 1000;
 $num = 0;
@@ -101,7 +136,10 @@ do {
     $inventoryno = $row['inventory'];
     // get all files for inventory number
     echo "{$sql}\n";
-    $sql = "SELECT b.zoterogroup, b.bestandid AS bestandid, b.name AS bestandname, s.name AS sessionname, b.zoterogroup, f.* FROM `file` f, session s, bestand b WHERE b.bestandid=s.bestandid AND s.sessionid=f.sessionid AND f.inventory=".$db->qstr( $inventoryno ).' ORDER BY fileid ASC';
+    $sql = "SELECT b.zoterogroup, b.bestandid AS bestandid, b.name AS bestandname, s.name AS sessionname, b.zoterogroup, f.* 
+        FROM `file` f, session s, bestand b 
+        WHERE b.bestandid=s.bestandid AND s.sessionid=f.sessionid AND f.filetype in ('file', 'archive') AND f.inventory=".$db->qstr( $inventoryno ).'
+         ORDER BY fileid ASC';
     $files = $db->GetAll( $sql );
 
 
@@ -119,7 +157,7 @@ do {
       $data['title'] .= " {$files[0]['name']}";
       $data['datum'] = new \DateTime( $files[0]['filemtime']);
     }
-    $data['url'] = "http://hdl.handle.net/20.500.11806/mediathek/iventory/".$inventoryno;
+    $data['url'] = "http://hdl.handle.net/20.500.11806/mediathek/inventory/".$inventoryno;
     $data['archive'] = "Mediathek HGK";
     $data['standort_archive'] = $bestandname;
     $data['signatur'] = $inventoryno;

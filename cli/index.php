@@ -106,6 +106,10 @@ $sql .= "
 WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where();
 echo "{$sql}\n";
 $num = intval( $db->GetOne( $sql ));
+
+echo "{$num} items to handle\n";
+if( $num == 0 ) return;
+
 $pages = ceil( $num/$pagesize );
 $p = $startpage * $pagesize;
 
