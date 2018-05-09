@@ -70,7 +70,7 @@ foreach( $rs as $row )
     FROM info_archive ia, archive_heuristic ah,
     `file` f
 		LEFT JOIN info_nsrl ins ON (f.sessionid=ins.sessionid AND f.fileid=ins.fileid)
-    LEFT JOIN info_siegfried isi ON (f.sessionid=isi.sessionid AND f.fileid=isi.fileid AND isi.id <> ".$db->qstr("x-fmt/412").")
+    LEFT JOIN info_siegfried isi ON (f.sessionid=isi.sessionid AND f.fileid=isi.fileid)
     WHERE f.sessionid=ia.sessionid
       AND f.fileid=ia.fileid
       AND ia.archive_heuristicid=ah.archive_heuristicid
@@ -79,6 +79,8 @@ foreach( $rs as $row )
 	echo "{$sql}\n";
   $rs2 = $db->Execute( $sql );
   foreach( $rs2 as $row2 ) {
+
+		if($row2['pronom'] == "x-fmt/412" ) continue;
 
     $file = $row2;
 		$fileid = $file['fileid'];
