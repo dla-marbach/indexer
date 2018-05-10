@@ -103,7 +103,7 @@ function deleteDocument( $db, $row, $client, $config, $echo = true )
 
 	 $id = "{$bestandid}.{$sessionid}.{$fileid}";
 	 $update = $client->createUpdate();
-	 $update->addDeleteById(123);
+	 $update->addDeleteById($id);
 
 	 try {
 		 if( $echo ) echo "delete...";
