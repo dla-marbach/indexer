@@ -94,6 +94,35 @@ function updateDocumentSolarium( $db, $bestandid, $sessionid, $fileid, $newdata,
 	//exec( $curl );
 }
 
+function deleteDocument( $db, $row, $client, $config, $echo = true )
+{
+	$bestandid = intval( $row['bestandid'] );
+   $sessionid = intval( $row['sessionid'] );
+	 $fileid = intval( $row['fileid'] );
+   if( !$fileid || !$sessionid ) return;
+
+	 $id = "{$bestandid}.{$sessionid}.{$fileid}";
+	 $update = $client->createUpdate();
+	 $update->addDeleteById(123);
+
+	 try {
+		 if( $echo ) echo "delete...";
+		 $result = $client->update($update);
+	 }
+	 catch( \Exception $e )
+	 {
+	  if( $echo ) echo $e;
+	  //print_r( $doc->toArray() );
+	  die();
+	 }
+
+	 echo 'Delete query executed'."\n";
+	 echo 'Query status: ' . $result->getStatus()."\n";
+	 echo 'Query time: ' . $result->getQueryTime()."\n";
+
+	 if( $echo ) echo "\n";
+}
+
 function addDocument( $db, $row, $client, $config, $echo = true )
 {
 	$bestandid = intval( $row['bestandid'] );

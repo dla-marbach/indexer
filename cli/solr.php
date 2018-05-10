@@ -99,6 +99,7 @@ $client = new \Solarium\Client($solarium_config);
 			$bestandid = intval( $row['bestandid'] );
 			$sessionid = intval( $row['sessionid'] );
 		  $fileid = intval( $row['fileid'] );
+			$lock = $row['lock'];
 		   if( !$fileid || !$sessionid ) {
 				 echo "{$row['bestandid']}.{$row['sessionid']}.{$row['fileid']}\n";
 				 print_r( $row );
@@ -116,13 +117,18 @@ $client = new \Solarium\Client($solarium_config);
 			$p++;
 
 			try {
-				addDocument( $db, $row, $client, $config, true );
+				if( $lock == 2 ) {
+					deleteDocument( $db, $row, $client, $config, true );
+				}
+				else {
+					addDocument( $db, $row, $client, $config, true );
+				}
 				$sql = "UPDATE file SET solrtime=FROM_UNIXTIME({$solrtime}) WHERE sessionid={$sessionid} AND fileid={$fileid}";
 				//echo "{$sql}\n";
 				$db->Execute( $sql );
 			}
 			catch( \Solarium\Exception\HttpException $e ) {
-				echo "addDocument failed: ".$e->getMessage();
+				echo "delete/addDocument failed: ".$e->getMessage();
 				log( 'solr.php',  $sessionid, $fileid, 'exception', "addDocument failed: ".$e->getMessage() );
 
 			}

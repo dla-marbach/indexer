@@ -114,14 +114,14 @@ foreach( $rs as $row )
         echo $remove."\n";
         passthru( $remove );
         if( is_mounted( $unpackPath )){
-          log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] cannot umount {$unpackPath}" );
+          log( 'recurse_archive.php', $row['sessionid'], $fileid, 'error', "[{$fileid}] cannot umount {$unpackPath}" );
           die( "[{$fileid}] cannot umount {$unpackPath}");
         }
       }
       echo $unpack."\n";
       passthru( $unpack );
       if( $remove && !is_mounted( $unpackPath )) {
-        log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] cannot mount {$unpackPath}" );
+        log( 'recurse_archive.php', $row['sessionid'], $fileid, 'error', "[{$fileid}] cannot mount {$unpackPath}" );
         echo( "[{$fileid}] cannot mount {$unpackPath}\n");
         rmdir( $unpackPath );
         continue;
@@ -147,7 +147,7 @@ foreach( $rs as $row )
 		}
 		closedir( $d );
 		if( !$hasFiles ) {
-			log( 'recurse_archive.php', $row['sessionid'], null, 'error', "[{$fileid}] empty archive: {$unpackPath}" );
+			log( 'recurse_archive.php', $row['sessionid'], $fileid, 'error', "[{$fileid}] empty archive: {$unpackPath}" );
 			echo( "[{$fileid}] empty archive: {$unpackPath}\n");
 			rmdir( $unpackPath );
 			continue;

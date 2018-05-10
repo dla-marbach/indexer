@@ -31,9 +31,9 @@ $pagesize = 3000;
 $page = 0;
 
 $filtes = array();
-$filters[] = "bestand.id:1";
-$filters[] = "(status.locked:\"false\") AND (suggest:\"@mail.dk\")";
-$status = 'lock';
+$filters[] = "session.id:1";
+$filters[] = "(status.locked:\"false\") AND (file.path:\"Library\")";
+$status = 'hide';
 $num = 0;
 
 $solarium = new Solarium\Client( $solarium_config );
@@ -45,7 +45,7 @@ do {
   foreach( $filters as $key=>$filter ) {
     $squery->createFilterQuery("filter_".$key)->setQuery($filter);
   }
-  $squery->setQuery( '*:*' )->setFields( array( 'session.id', 'file.id' ));
+  $squery->setQuery( '*:*' )->setFields( array( 'session.id', 'file.id', 'file.path' ));
 
   try {
   	$rs = $solarium->select( $squery );
@@ -64,15 +64,18 @@ do {
     $doc = $document->getFields();
     $sessionid = $doc['session.id'];
     $fileid = $doc['file.id'];
-    $data = array();
+
+    $word = "Library";
+    if( substr( $doc['file.path'], 0, strlen( $word )) != $word ) continue;
 
     switch( $status ) {
-    	case 'lock':
-    		$data['status.locked'] = true;
+      case 'lock':
     		$sql = "UPDATE `file` SET `lock`=1, mtime=NOW() WHERE sessionid={$sessionid} AND fileid={$fileid}";
     		$sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( 'robot' ).", ".$db->qstr( 'lock' ).")";	   break;
+      case 'hide':
+    		$sql = "UPDATE `file` SET `lock`=2, mtime=NOW() WHERE sessionid={$sessionid} AND fileid={$fileid}";
+    		$sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( 'robot' ).", ".$db->qstr( 'hide' ).")";	   break;
     	case 'unlock':
-    		$data['status.locked'] = false;
     		$sql = "UPDATE `file` SET `lock`=0, mtime=NOW() WHERE sessionid={$sessionid} AND fileid={$fileid}";
     		$sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( 'robot' ).", ".$db->qstr( 'unlock' ).")";
     	   break;
@@ -80,7 +83,6 @@ do {
     	case 'yellow':
     	case 'green':
     	case 'unknown':
-    		$data['status.status'] = $argv[2];
     		$sql = "UPDATE `file` SET status=".$db->qstr( $argv[2] ).", mtime=NOW() WHERE sessionid={$sessionid} and fileid={$fileid}";
     		$sql_log = "INSERT INTO log VALUES ( NOW(), {$sessionid}, {$fileid}, ".$db->qstr( 'robot' ).", ".$db->qstr( 'status: '.$argv[2] ).")";
     	   break;
@@ -90,7 +92,6 @@ do {
     echo "{$num}/{$numResults}: ".$sql."\n";
     $db->Execute( $sql );
     $db->Execute( $sql_log );
-    //updateDocumentSolarium( $db, $sessionid, $fileid, $data, $config );
   }
   if( ($page+1)*$pagesize <= $numResults ) {
     $page++;
