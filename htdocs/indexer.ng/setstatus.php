@@ -19,8 +19,8 @@ $id = "{$bestandid}.{$sessionid}.{$fileid}";
 
 $user = array_key_exists( 'REMOTE_USER', $_SERVER ) ? $_SERVER['REMOTE_USER'] : 'unknown';
 
-$isAdmin = inGroup( 'admin', $user );
-$isEditor = inGroup( 'editor', $user );
+$isAdmin = inGroup( 'admin', $user, $bestandid );
+$isEditor = inGroup( 'editor', $user, $bestandid );
 
 //$isAdmin = true;
 

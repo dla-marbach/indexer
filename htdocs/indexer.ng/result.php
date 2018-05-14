@@ -217,7 +217,7 @@ if( $hasError )
 		$doc = $document->getFields();
 		$id = $doc['id'];
 		echo "<!-- #{$id} ------------------------------------------------------------------- -->\n";
-		$bestandid = $doc['bestand.id'];
+		$bestandid = intval( $doc['bestand.id'] );
 		$session = $doc['session.id'];
 		$groups = $doc['session.group'];
 		$fileid = $doc['file.id'];

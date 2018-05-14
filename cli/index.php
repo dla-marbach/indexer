@@ -103,7 +103,7 @@ foreach( $pluginClass::joins() as $short=>$dbname )
 LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
 }
 $sql .= "
-WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where();
+WHERE f.filesize > 0 AND f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where();
 echo "{$sql}\n";
 $num = intval( $db->GetOne( $sql ));
 
@@ -122,7 +122,7 @@ foreach( $pluginClass::joins() as $short=>$dbname )
 LEFT JOIN {$dbname} {$short} ON (f.sessionid={$short}.sessionid AND f.fileid={$short}.fileid) ";
 }
 $sql .= "
-WHERE f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
+WHERE f.filesize > 0 AND f.sessionid = s.sessionid AND f.localcopy IS NOT NULL AND {$sessSQL} AND ".$pluginClass::where()."
 LIMIT 0,{$pagesize}";
 $recs = 0;
 

@@ -121,7 +121,7 @@ class RecurseFS
     $canread = true;
 
     if( !is_file( "{$this->basepath}/{$fullpath}" )) {
-      log( 'recurse.php', $this->sessionid, $fileid, 'error', "not a file" );
+      log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', "not a file" );
       return;
      }
 
@@ -137,20 +137,20 @@ class RecurseFS
      if( $this->hardlink ) {
        $ret = link( "{$this->basepath}/{$fullpath}", "{$this->localpath}/{$localcopy}" );
        if( !$ret ) {
-         log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
+         log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
          //return;
        }
      }
      else {
        $src = fopen( "{$this->basepath}/{$fullpath}", 'r' );
        if( $src === false ) {
-         log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot original open file' );
+         log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'cannot original open file' );
          return;
        }
          $dest = fopen( "{$this->localpath}/{$localcopy}", 'w' );
          if( $dest === false ) {
            fclose( $src );
-           log( 'recurse.php', $this->sessionid, $fileid, 'error', 'cannot create cache file' );
+           log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'cannot create cache file' );
            return;
          }
 
@@ -159,7 +159,7 @@ class RecurseFS
          fclose( $dest );
          if( $bytes === false ) {
            unlink( "{$this->localpath}/{$localcopy}" );
-           log( 'recurse.php', $this->sessionid, $fileid, 'error', 'stream to stream copy error' );
+           log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'stream to stream copy error' );
            return;
          }
        }
@@ -186,7 +186,7 @@ class RecurseFS
        $sha256 = null;
      }
       if( $sha256 == null ) {
-        log( 'recurse.php', $this->sessionid, $fileid, 'error', 'error generating sha256 checksum' );
+        log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'error generating sha256 checksum' );
         return;
        }
     }
@@ -210,7 +210,7 @@ class RecurseFS
     echo "storeDir( $this->sessionid, $path, $fullpath, $file, $parentid, $level )\n";
 
     if( !is_dir( "{$this->basepath}/{$fullpath}" )) {
-      log( 'recurse.php',  $this->sessionid, $fileid, 'error', "not a directory" );
+      log( 'recurseFS.class.php',  $this->sessionid, $fileid, 'error', "not a directory" );
       return;
     }
 
@@ -310,7 +310,7 @@ class RecurseFS
 
       // logentry on stat error
       if( $statError ) {
-        log( 'recurse.php',  $this->sessionid, $fileid, 'error', 'cannot stat file' );
+        log( 'recurseFS.class.php',  $this->sessionid, $fileid, 'error', 'cannot stat file' );
         continue;
       }
       if( is_link( "{$this->basepath}/{$fullpath}" ))
