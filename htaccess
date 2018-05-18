@@ -1,0 +1,6 @@
+# .htaccess, Simpel-Schutz fuer /indexer
+AuthType Basic
+ShibDisable On
+AuthName "Center for Digital Matter - Indexer"
+AuthUserFile /etc/apache2/.htusers
+Require valid-user

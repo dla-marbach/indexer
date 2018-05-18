@@ -4,6 +4,7 @@ php index.php gvfsinfo all
 php index.php archive all
 php index.php iso all
 php index.php dmg all
+php index.php unar all
 php index.php md5 all
 php index.php imagemagick all
 php index.php avconv all
