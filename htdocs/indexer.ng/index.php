@@ -2,7 +2,7 @@
 require_once( 'config.inc.php' );
 require_once( $indexerPath.'/db.inc.php' );
 
-$subtitlestr = "<b>I</b>ntelligend <b>R</b>ead-<b>On</b>line <b>M</b>edi<b>a</b> <b>Id</b>entification <b>En</b>gine";
+$subtitlestr = "<b>I</b>ntelligent <b>R</b>ead-<b>On</b>ly <b>M</b>edi<b>a</b> <b>Id</b>entification <b>En</b>gine";
 if( array_key_exists( 'onlinebestand', $config )) {
   $sql = "SELECT name FROM bestand WHERE bestandid=".$config['onlinebestand'];
   $titlestr = $db->getOne( $sql );
