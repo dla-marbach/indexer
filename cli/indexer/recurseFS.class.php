@@ -135,6 +135,7 @@ class RecurseFS
      $localcopy = $md5{0}.'/'.$md5{1}.'/'.substr( $md5, 2 );
 
      if( $this->hardlink ) {
+       if( file_exists( "{$this->localpath}/{$localcopy}" )) unlink( "{$this->localpath}/{$localcopy}" );
        $ret = link( "{$this->basepath}/{$fullpath}", "{$this->localpath}/{$localcopy}" );
        if( !$ret ) {
          log( 'recurseFS.class.php', $this->sessionid, $fileid, 'error', 'cannot create hardlink to cache file' );
@@ -190,9 +191,9 @@ class RecurseFS
         return;
        }
     }
-
+    // ".$this->db->qstr(  iconv( $this->session['fscharset'], 'UTF-8', $file ))."
     $sql = "UPDATE `file` SET
-     ext=".$this->db->qstr( pathinfo( $fullpath, PATHINFO_EXTENSION ) )."
+     ext=".$this->db->qstr( iconv( $this->session['fscharset'], 'UTF-8', pathinfo( $fullpath, PATHINFO_EXTENSION )))."
      , sha256=".$this->db->qstr( $sha256 )."
      , localcopy=".$this->db->qstr( $localcopy )."
      , readstate=".$this->db->qstr( 'ok' )."
@@ -200,7 +201,6 @@ class RecurseFS
      , mtime=NOW()
      WHERE sessionid={$this->sessionid} AND fileid={$fileid}";
     $this->db->Execute( $sql );
-
   }
 
   function storeDir( $fileid, $path, $fullpath, $file, $parentid, $level ) {
