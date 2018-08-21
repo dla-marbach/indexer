@@ -82,7 +82,7 @@ if( $pluginClass == 'indexer\\tika' ) {
 	$rs = $db->Execute( $sql );
 	foreach( $rs as $row ) {
 		$sessionid = $row['sessionid'];
-		$cmd = $config['tika']." ".escapeshellarg( "jdbc:mysql://{$config['db']['server']}/{$config['db']['db']}?user={$config['db']['user']}&password={$config['db']['pwd']}&useSSL=false&serverTimezone={$config['db']['timezone']}" )." {$sessionid}";
+		$cmd = $config['tika']." ".escapeshellarg( "jdbc:mysql://{$config['db']['server']}/{$config['db']['db']}?user={$config['db']['user']}&password={$config['db']['pwd']}&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=".urlencode( $config['db']['timezone'] ))." {$sessionid}";
 		echo "$cmd\n";
 		passthru( $cmd );
 	}
