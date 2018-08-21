@@ -87,7 +87,7 @@ class AVConv extends Plugin
 	public static function where()
 	{
 		return "(ilm.`mimetype` LIKE 'video/%' OR ilm.`mimetype` LIKE 'audio/%' OR
-				 igi.`mimetype` LIKE 'video/%' OR igi.`mimetype` LIKE 'audio/%')
+				 igi.`mimetype` LIKE 'video/%' OR igi.`mimetype` LIKE 'audio/%' OR igi.`mimetype` LIKE 'application/mxf')
 				 AND iav.status IS NULL";
 	}
 

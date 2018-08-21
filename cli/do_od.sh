@@ -1,14 +1,14 @@
 #php recurse.php hd
-php index.php libmagic all
-php index.php gvfsinfo all
-php index.php archive all
-php index.php iso all
-php index.php dmg all
-php index.php unar all
-php index.php md5 all
-php index.php imagemagick all
-php index.php avconv all
-php index.php antiword all
-php index.php nsrl all
-php index.php tika all
-php solr.php all
+#php index.php libmagic 4419
+php index.php gvfsinfo 4419
+php index.php archive 4419
+php index.php iso 4419
+php index.php dmg 4419
+php index.php unar 4419
+php index.php md5 4419
+php index.php imagemagick 4419
+php index.php avconv 4419
+php index.php antiword 4419
+php index.php nsrl 4419
+php index.php tika 4419
+php solr.php 4419
