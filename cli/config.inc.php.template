@@ -27,6 +27,7 @@ $config['db'] = array(
    'user' => 'indexer',
    'pwd' => 'SECRET',
    'db' => 'indexer_main',
+   'timezone' => 'Europe/Paris',
    );
 
 $config['tempfolder'] = '/server/data/tmp';
