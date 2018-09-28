@@ -65,6 +65,10 @@ $resultFields = array(
 	'shorttext',
 );
 
+function quoteJS( $string, $char="'" ) {
+	return str_replace( $char, "\\".$char, $string );
+}
+
 ?><script>
  $(function() {
 var name = $( "#name" ),
@@ -355,7 +359,7 @@ if( $hasError )
 				<!-- download -->
 				<?php if( $hasFile && $status != 'yellow' && $status != 'red' ) { ?><a href="raw.php?file=<?php echo urlencode( $localfile ); ?>&mime=<?php echo urlencode( $mimetype ); ?>&name=<?php echo urlencode( $doc['file.name'] ); ?>" target="_new">
 				<span class="glyphicon glyphicon-download"></span></a> <?php } ?>
-				<?php if( $doc['file.filetype'] == 'dir' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", ($path=='/'?'':$path)."/{$filename}" ))); ?>' );">
+				<?php if( $doc['file.filetype'] == 'dir' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo quoteJS( htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", ($path=='/'?'':$path)."/{$filename}" )))); ?>' );">
 				<span class="glyphicon glyphicon-list"></span></a> <?php } ?>
 				<?php if( $doc['file.filetype'] == 'archive' ) { ?><a style="" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> archiveid:<?php echo htmlspecialchars( "#{$doc['id']}" ); ?>' );">
 				<span class="glyphicon glyphicon-list"></span></a> <?php } ?>
@@ -474,7 +478,7 @@ if( $hasError )
 		<?php } ?>
 				<!-- file.path -->
 				<div style="padding-left: 24px;">
-					<a style="color:#909090;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $path ))); ?>' );"><?php echo htmlspecialchars( $path ); ?></a>
+					<a style="color:#909090;" href="javascript:newquery( 'session:<?php echo htmlspecialchars( $doc['session.id'] ); ?> path:<?php echo quoteJS( htmlspecialchars( str_replace( ' ', '+', str_replace( '+', "\\+", $path )))); ?>' );"><?php echo htmlspecialchars( $path ); ?></a>
 				</div>
 					<!-- suggest -->
 					<div style="color: black;">
@@ -509,7 +513,7 @@ if( $hasError )
 						<li><a href="#cite<?php echo $num; ?>">cite this item</a></li>
 					</ul>
 					<div class="tab-content">
-						<div class="tab-pane active" id="content<?php echo $num; ?>"><pre style="border: none;"><?php if(($status != 'yellow' && $status != 'red') || $isAdmin) { echo ( htmlspecialchars( substr( $doc['shorttext'], 0, 1024 ))); } ?></pre>&nbsp;</div>
+						<div class="tab-pane active" id="content<?php echo $num; ?>"><pre style="border: none;"><?php if(($status != 'yellow' && $status != 'red') || $isAdmin) { if( array_key_exists( 'shorttext', $doc )) echo ( htmlspecialchars( substr( $doc['shorttext'], 0, 1024 ))); } ?></pre>&nbsp;</div>
 						<div class="tab-pane" id="file<?php echo $num; ?>"><pre style="border: none;"><?php echo htmlspecialchars( $doc['file.stat'] ); ?></pre></div>
 						<div class="tab-pane" id="libmagic<?php echo $num; ?>" style=""><pre style="border: none;">
 	<b>mimetype: </b><?php echo htmlspecialchars( $doc['libmagic.mimetype'] ); ?>
